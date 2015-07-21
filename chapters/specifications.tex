@@ -123,7 +123,12 @@ The principal advantage of the first method is that it enables the removal of tr
 
 However, it also means that the more devices a protocol accepts, the lower the amount of information available in each packet for data itself. For example, if a maximum of 10 devices can be connected at once, 3 bits of every byte must now be dedicated to identification metadata, which leaves 5 bits for data: instead of 255 possible values p. packet, we now have 32. This is disadvantageous as the amount of "wasted" space increases significantly with message size when using this method.\\
 
-[image for disambiguation]
+\begin{figure}[ht]
+   \centering
+   \includegraphics[width=0.75\textwidth]{img/disambiguation.png}
+   \caption{Recovering mixed-together messages with packet-level or message-level sender identification.}
+   \label{img:disambiguation}
+\end{figure}
 
 It follows that the second method is preferable where the risk of simultaneous message emission is relatively low. We see later that this is indeed the case. \\
 
