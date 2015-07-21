@@ -6,11 +6,23 @@ To ensure clarity, this part will be keeping with the three-module  structure es
 
 \section{User Experience - The Choreographer App}
 
+\begin{figure}[ht]
+   \centering
+   \includegraphics[width=0.75\textwidth]{img/ChoreographerGUI.png}
+   \caption{The CUBLI Choreographer Graphical User Interface.}
+   \label{img:ChoreographerGUI}
+\end{figure}
+
 In the end the choreographer application is quite close to the initial concept. Whereas one could have expected it to evolve differently, the first approach has remained a valid implementation during the project and thus the concept has not deviated much from the outset.\\
 
 One notable addition is the creation of a debugging panel, to the right of the main window, which can also be completely deactivated and hidden. When it is visible however, it provides access to all the communications, and to manually send out messages from the computer, or to simulate incoming messages from cubes.\\
 
-[ figure : debugging panel ]
+\begin{figure}[ht]
+   \centering
+   \includegraphics[width=0.75\textwidth]{img/DebugPanel.png}
+   \caption{The debugging \& information panel.}
+   \label{img:DebugPanel}
+\end{figure}
 
 \subsection{Language}
 
@@ -50,7 +62,12 @@ The class named Serial Manager was created in order to handle those actions.
 
 Created and displayed when each cube connects to the application, a white rectangular canvas on which the user can place, modify or remove color coded squares is meant to represent the chorography - the horizontal axis representing time, - and, as such, is called a Timeline. Each square, called a Primitive, represents a specific action of cubli, and thus, one or several Timelines, each containing a sequence of primitives, together represent a choreography. \\
 
-[ pictures of timelines and primitives]\\
+\begin{figure}[ht]
+   \centering
+   \includegraphics[width=0.75\textwidth]{img/TimelinesPanel.png}
+   \caption{The Timeline Editor panel.}
+   \label{img:TimelinesPanel}
+\end{figure}
 
 For this purpose, within this projet the timeline canvas, or "Graphics Scene" in QT nomenclature, was programmed to respond to user interactions in the following ways: 
 \begin{itemize}
