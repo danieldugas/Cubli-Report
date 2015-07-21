@@ -1,0 +1,173 @@
+\chapter{Specifications}\label{sec:specifications}
+
+The initial task of the project was to define the project goals and specifications, and the basic structure of the development plan.\\ 
+
+Thinking of the necessary components and the actions which would be required of them in order to generate the desired behavior, it was clear that at the minimum the project would require two separate programs, and thus at least two code bases. In addition, acting as a bridge within the two, and since it would likely be a quite significant endeavor in itself, the communication code was also separated conceptually and is discussed in the following as such.\\ 
+
+ From this understanding, development is split into three main modules :
+
+\begin{enumerate}
+\item App behavior implementation - User Experience (C++)  
+\item Communications implementation  (C++/C)
+\item Cubli behavior implementation  (C)  
+\end{enumerate}
+ 
+Which can be described as follows:
+
+\subsubsection{App Behavior Implementation}
+
+The choreographer application has to be designed from scratch, providing an efficient and reliable way for users to interact wirelessly with the cubli. \\
+
+One of the main objectives when designing the interface was for it to be as simple and intuitive as possible.
+ 
+\subsubsection{Communications Implementation}
+
+Acting as a bridge between the cubli and choreographer source code, the communications protocol behavior has to match in both cases, allowing messages encrypted in one to be decrypted by the other.
+
+\begin{description}
+\item[] Desired specifications for the protocol :
+\begin{description}
+  \item[Robust] - Ensuring that messages are transmitted successfully, and    strict prevention of information corruption in the process. 
+
+  \item[Lightweight] - Minimal amount of processor overhead in order to not disrupt other tasks in cubli 
+
+  \item[Concise] - Making messages as short as possible while ensuring that 	any information which needs to be transferred can be conveyed using the 	protocol. 
+
+  \item[Cross-compatible] - Ensuring that the code could be compiled on the 	two other modules and would yield the same behavior (c.f. signedness 	issues) 
+\end{description}
+\end{description}
+ 
+\subsubsection{Cubli Behavior Implementation}
+
+Having received information representing the choreography description, status of other cubes, or user commands, the cubli has to react accordingly.
+
+Pre-existing cubli source code had to be supplemented and modified to implement the expected behavior.
+
+
+
+
+\section{User Interface}
+
+The goal is to create the choreographer application, an easy to launch and use executable.
+
+Its specified core functionalities are:
+
+\begin{itemize}
+\item Choreography creation, and following that, modification
+\item Choreography execution and control
+\item Real-time display of choreography status
+\item Real-time display of cubli status
+\end{itemize}
+
+along with the implied necessary functionalities:
+
+\begin{itemize}
+\item Communication with Cubli, and optionally display of those communications
+\item Options for setting up the serial port
+\end{itemize}
+
+
+The application itself could in theory take many forms and still satisfy the necessary functionality. In order to decide which direction to take, examples of existing implementations were considered. These examples are applications with uses unrelated to the cubli choreographer, but which contain UI aspects that fulfill similar requirements as the ones pertaining to the choreographer application.\\
+
+As an example, it would be possible to satisfy all those functionalities in a command-line interface. However, ease of use and simplicity go out the window in such an implementation when it comes to the timeline creation process. For that reason particularly, a graphical user interface, although it requires longer and more complex development, was deemed optimal.\\
+
+[Command line interface]\\
+
+In fact, since the creation process lies at the center of the choreographer concept, and due to the other functionalities requiring little screen space in comparison, it makes sense for the choreography creation interface to occupy most of the interface, and dictate many design decisions.\\
+
+Remaining functionalities to fulfill would be choreography control, port and application settings, extra user information and communication display.\\
+
+In designing the interface, the parallel was made media music applications since the idea of a choreography can be conceptually tied with music. This applies in particular to the choreography control interface.\\
+
+[Image of music players, with controls and info at the bottom]\\
+
+In a similar vein, music or video creation/splicing softwares often deal with similar manipulation of time-dependent sequences by the user, and their solutions are particularly suited to the purposes of this project.\\
+
+[Image of video editing in blocks, with different timelines]\\
+
+
+\subsection{Sketches, other examples}
+
+\section{Cubli Behavior}
+
+The purpose of this project was to add new behavior to Cubli, without removing any. That is, one of the main goals was to preserve all existing functionality.
+
+As such, it is necessary to create a state for cubli in which it performs choreographies. This is distinct from another, "standard" state, in which cubli behaves as it previously did.
+
+The former, called "choreography" state, should be entered at the start of the performance and exited at the end.
+
+\section{Communication}
+
+It is straightforward that communication between cubli and choreographer is necessary in order to put choreographies into action. However, the exact implementation of these communications is not, itself, obvious.\\
+
+The observed particularities of this mode of UART transmission are described as follows:
+\begin{itemize}
+\item communications involve the transmission of 8-bit "packets" ( or "characters" ) in sequence
+\item all devices share the same frequency channel. i.e, when a device sends a packet all other devices immediately receive it
+\item the packets themselves are not signed or identified
+\item there is a significant probability of a cubli failing to receive a packet, or receiving packets in the wrong order
+\item there is a much lower probability of the computer failing to receive a packet
+\end{itemize}
+
+Identification, verification, and disambiguation of messages, if necessary, have to be implemented within these constraints.\\
+
+Identification: In a scenario where only one cubli and computer communicate, it would be possible to forego the encoding of sender and recipient inside messages, as they are implied in one-on-one conversation. However, since the goal of this project is to have a choreographer functioning with several cublis simultaneously it becomes necessary for communications to explicit the devices from which they are emitted and to which they are intended.\\
+
+There would be several ways to implement this, notably at the packet level - for example, using some bits from each packet to encode the sender - or at the message level - each group of chunks containing a header with the relevant information.\\
+
+The principal advantage of the first method is that it enables the removal of transmission failures in the case of simultaneous emission, as it allows identification of packets in any situation. In simpler terms, for example if two packet sequences are sent simultaneously by two devices: the orginal sequences can still be disambiguated by organizing packets based on the senders - which are encrypted in every byte - and the garbled messages can thus be reassembled.
+
+However, it also means that the more devices a protocol accepts, the lower the amount of information available in each packet for data itself. For example, if a maximum of 10 devices can be connected at once, 3 bits of every byte must now be dedicated to identification metadata, which leaves 5 bits for data: instead of 255 possible values p. packet, we now have 32. This is disadvantageous as the amount of "wasted" space increases significantly with message size when using this method.\\
+
+[image for disambiguation]
+
+It follows that the second method is preferable where the risk of simultaneous message emission is relatively low. We see later that this is indeed the case. \\
+
+
+Verification: Does this project require that the integrity of messages be verified? For any scenario where the rate of successful transmission can be expected to be lower that 100\%, ensuring that messages are emitted and received as intended is essential. In addition, though it requires extra effort during development, the necessary overhead to verify message contents during operation is low enough that it would be reasonable to implement it here even if a \~100\% transfer rate was expected.
+
+
+
+
+\section{Failure Scenarios \& Responses}
+This section discusses the planning of failure estimation and handling.
+\textit{What could go wrong, and what cubli should do if it does}.\\
+
+As in every complex system, there are certain and uncertain likelihoods of something going wrong at any stage and for a multitude of reasons.\\
+
+In this section we attempt to identify the most important failures which can affect any step of choreography, and come up with appropriate responses. These responses shape the entire project execution in no small way.\\
+
+Here, failure importance is considered in the risk-analysis sense. That is, it is based on two factors: probability of occurrence, and severity of the disruption. Disruption is the amount of deviation from expected behavior, weighed by subjective preference for avoiding the resulting erroneous behavior. \\
+
+Regarding the usefulness of this section:\\
+
+Of the two factors taken into account above, the second, that is the disruptions themselves, can in many cases be deduced logically ( "if A fails, then B fails. If both fail, X will not be fulfilled" ), though it generally still contains probabilistic unknowns. The first factor, probability of occurrence, has to be at first intuitively gauged, since at the outset very little is known about hardware and software reliabilities, and only later measured.\\
+
+For this reason, failures can at the start be incorrectly evaluated, their consequences or the responses misunderstood, or even simply not expected. As the project progresses, the actual importance of failures - through both factors - becomes gradually clearer.  This evolution leads to modification of the planned implementation in order to account for these corrections.
+
+\subsection{Choreography Failures}
+
+Cubli's ability to learn and perform movements is impressive and works very well. It still happens that moves fail with varying likelihoods - especially difficult moves. This is the principal source of failure in a choreography.
+
+As such, the strategy for recovering from failed moves is important, and though in any case the perfect execution of the choreography is lost when such a failure happens, different recovery methods work to salvage different aspects of the remaining choreography execution.
+
+A few examples of potential recovery methods and their consequences:\\
+
+\begin{description}
+\item[A.] Letting unaffected cubes continue their program, without waiting. The affected cube recovers as fast as possible, and then continues its program with a delay with respect to the others.
+The particularities of this strategy are as follows:
+
+\begin{itemize}
+\item[-] Sync between timelines is not preserved in case of failures
+\item[+] Non-failed cubes' timelines remain true to their intended versions.
+\item[+] Almost no intervention is required, and the communication cost, as well as likelihood of aggravating a failure are low.
+\end{itemize}
+
+\item[B.] Notifying all cubes in case of failure, pausing all devices until the issue is resolved, and then resuming all the choreography all at once.
+
+\begin{itemize}
+\item[-] The more procedures are put in place to ensure the correct behavior of all cubes, and the exactitude of sync, the more complex this strategy, and the longer it takes before choreographies resume. 
+\item[+] If done correctly, the simultaneity of all timelines is preserved, and only the length of the global choreography is increased by a failure.
+\end{itemize}
+
+\end{description}

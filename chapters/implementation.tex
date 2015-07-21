@@ -1,0 +1,209 @@
+\chapter{Implementation}\label{sec:implementation}
+
+This section goes over the solutions and implementation that were selected over the course of the semester project. \\
+
+To ensure clarity, this part will be keeping with the three-module  structure established in the previous chapter. 
+
+\section{User Experience - The Choreographer App}
+
+In the end the choreographer application is quite close to the initial concept. Whereas one could have expected it to evolve differently, the first approach has remained a valid implementation during the project and thus the concept has not deviated much from the outset.\\
+
+One notable addition is the creation of a debugging panel, to the right of the main window, which can also be completely deactivated and hidden. When it is visible however, it provides access to all the communications, and to manually send out messages from the computer, or to simulate incoming messages from cubes.\\
+
+[ figure : debugging panel ]
+
+\subsection{Language}
+
+C++ was the obvious choice for a language for three reasons: i) it allowed to reuse code structure from the C source with few modifications ii) the communication protocol could be compiled on the two different machines from the same C file, thus greatly reducing the chances of bugs appearing due to unvoluntary divergences in the protocol source code iii) On the first targeted machine, it had readily available libraries for all the necessary peripherals and UI elements, as well as useful object-oriented features. 
+The libraries in question were taken from the QT development kit, a decision which was not obvious as the advantages of QT over Visual Studio appear marginal. \\
+
+Just as the final application, in debugging mode, has two main panels - one concerning the user interaction, specifically the creation of timelines and control of the choreography evolution; one displaying communications through the serial port and state machine information - the development process was centered around two features : i) serial port communication and ii) timeline creation, transfer, and execution. 
+
+\subsection{App Components}
+
+Here we clarify the contents of various parts of the choreographer app source, as available in the Github repository. For each part, a general explanation is given, and if any are relevant, is followed by more technical details.
+
+\subsubsection{Main Window}
+
+First and foremost, this class displays and sets up the main viewport. It defines the action for all the buttons, and provides functions for updating text fields such as the app information.
+
+As such it is mostly QT-specific code, with several functions handling the app behavior when connecting or syncing with cubes.
+
+\subsubsection{Serial Manager}
+
+Serial port communication was the first implemented functionality of the app, relatively easy to write thanks to the already well-built QT serial port libraries. In detail, successful sending entails: 
+
+\begin{itemize}
+\item setting the port name ( Later, a panel for setting those options easily, which among other things contains a drop down list enumerating the available port names was added ) 
+\item setting the serial parameters, such as baud rate, hardware flow control and so on to the same values as inside cubli ( Baud rate of 115200, ) 
+\item open the port. This is straightforward through a simple function call 
+\item send bytes through the port. A function call is all that is needed here as well. 
+\end{itemize}
+
+Receiving is handled in an interrupt, which hands over control to a function written for that purpose.\\
+
+Among other things this function displays all the received bytes in a serial stream display panel. In addition, any bytes sent by the Application over serial are also displayed in the same serial stream display panel with a line prefix of '>>' \\
+
+The class named Serial Manager was created in order to handle those actions. 
+
+\subsubsection{Timeline}
+
+Created and displayed when each cube connects to the application, a white rectangular canvas on which the user can place, modify or remove color coded squares is meant to represent the chorography - the horizontal axis representing time, - and, as such, is called a Timeline. Each square, called a Primitive, represents a specific action of cubli, and thus, one or several Timelines, each containing a sequence of primitives, together represent a choreography. \\
+
+[ pictures of timelines and primitives]\\
+
+For this purpose, within this projet the timeline canvas, or "Graphics Scene" in QT nomenclature, was programmed to respond to user interactions in the following ways: 
+\begin{itemize}
+\item Clicking on empty space creates a new primitive at that position 
+\item Clicking a primitive modifies it, cycling through the available types one at a time 
+\item Double clicks are no different from two simple clicks 
+\item Left click-and-dragging a primitive moves it based on mouse position 
+\item Right clicking a primitive erases it 
+\item Right click-and-dragging erases all primitives under the cursors path 
+\item Left click and dragging on empty space has no effect 
+\end{itemize}
+
+\subsubsection{Timeline - Technical Addendum}
+
+Programmatically this behavior was encoded as follows: 
+
+\begin{itemize}
+\item When the left mouse button is pressed within the timeline bounds, the application checks whether a primitive is present under the cursor. Depending on whether that is the case, different actions are assigned to mouse events immediately following this one. Furthermore, the primitive present under the cursor, if any, is selected for later handling 
+\item ...
+\end{itemize}
+
+
+\subsubsection{Primitive}
+
+The primitive class is an extension of simple rectangle objects in the timeline, adding extra properties such as type, and automatically assigning styles, width, or positions, thus making them simpler to display and move around. These extended rectangle objects are meant to visually represent the action primitives of a cube in the choreography.\\
+
+This class provides methods for easily accessing certain properties, modifying, or moving the primitives around, for example without running into each other.
+
+\subsubsection{ComStateManager}
+
+ The ComStateManager class is the part of the application which handles communication responses, i.e. \textit{what to send and when}.
+ 
+Any message sent to the cube from the app means a call to this class. It is also where cube statuses are stored, which allow it and other parts of the application to take into account whether particular cubes are connected or not, syncing or not, and so on.\\
+
+Which message must be sent is necessarily determined in this class' logic.
+It accomplishes this through a state machine, that has a corresponding response for every incoming message or application call.
+
+\subsubsection{SettingsDialog}
+
+SettingsDialog is responsible for putting together the settings dialog which appears when the serial port settings are to be modified, and storing their values.
+
+\subsubsection{Main.cpp}
+
+Main runs the mainwindow code, launching the app, and any necessary QT routines.
+
+\section{Communications}
+
+The source for the message protocol fits inside one cpp file and accompanying header. It mainly creates or deconstructs strings or characters, in order to transmit and receive messages which satisfy the required specifications.\\
+
+Of course, the concept of communication protocol as a whole pertains to more than uniquely this message-transmission code. It also englobes the determination of how the machines ought to behave when contacting each other, which in practice is encoded all over their code ( see communication state machines, MainWindow, etc ). However for the sake of consistency the particulars of these protocols are discussed here.\\
+
+One of the difficulties during this project was the unreliability of the UART behavior in the cubli microcontroller. Thankfully the communication protocol was designed to be quite robust from the get-go, which seemed at the time like a potentially unnecessary amount of safety, though it proved essential.
+
+\begin{figure}[ht]
+   \centering
+   \includegraphics[width=0.75\textwidth]{img/LAIRD-radio.JPG}
+   \caption{Radio used in the Cubli hardware.}
+   \label{img:LAIRD-radio}
+\end{figure}
+
+The inability to work with the assumption that 'the majority of messages would be able get through successfully' also meant that communication protocols were not simply a formality, and had to be designed with contingencies in mind. This made this module an interesting, though larger than anticipated, part of the project.
+
+\subsection{com\_protocol}
+
+Principally, this code transforms a message's code, additional content, and metadata into a normalized string of characters which can be sent one byte at a time over UART. And vice-versa.\\
+
+The message \\
+
+[Message deconstruction] \\
+
+
+\subsubsection{Header}
+
+The header, com\_protocol.h contains enumerations for all the message codes, communications states, and a few other which are shared between cubli and computer, as well as some macro expansions which concern communication settings.\\
+
+[Message code table]\\
+
+It also contains two compile flags:\\
+
+\begin{itemize}
+\item[] COM\_VERBOSE
+
+	if this flag is defined, messages also contain a human-readable appendix expliciting the relevant message code, and extra content.\\
+
+\item[] COM\_DEBUG
+
+	if this flag is defined, extra information pertaining to failure when decrypting messages is displayed as plain text. This is for example useful when messages are not getting decrypted though they are transmitted correctly.
+    
+\end{itemize}
+
+\subsection{Protocols}
+
+\subsubsection{When Syncing}
+\subsubsection{When Connecting}
+\subsubsection{When ...}
+
+\section{Cubli}
+
+In order to avoid introducing new bugs, care was taken to build on top of already-existing functionality rather than to modify it, as much as possible.
+
+This means that except for a few additional line of codes, the controllers remain unchanged, and the code relevant to this project is composed of additional tasks for communication, choreography, and additions in mode management.\\
+
+These relevant parts are what will be discussed here, rather than the entire cubli source code.
+
+\subsection{Affected Tasks}
+
+The main routines executed inside cubli softwares are managed by a realtime OS, which compartimentalizes them into various tasks, giving to each their respective processor access time, depending on their priority, period, and so on. This allows several processes to run in parallel, without necessarily affecting each other.
+
+As an example, some tasks inside cubli are responsible for regularly checking that user inputs have been made, while others are responsible for the high-frequency control necessary during movements, such as the LQR controller task for balancing.
+
+This subsection describes the code modifications and additions in this project, to the relevant tasks
+
+\subsubsection{ModeManagement Task}
+
+Originally a task responsible for updating the global variables responsible for deciding which controllers get activated based on the current mode ( which is originally incremented through the press of a respective hardware button ), it keeps its functionality in this project.\\
+
+New modes are created for choreography, corresponding to the movement primitives, while the original modes are renamed to button modes, and relevant code sections are modified to make the new and original modes cohabitate. To this end, the original and old modes are distinguishable, allowing behavior which was only needed in old modes to be disabled for the new modes only.\\
+
+[Old modes and New Modes]\\
+
+[Pause upon resetting cubli on face?]\\
+
+\subsubsection{ComManagement Task}
+
+This task contains both the code responsible for reading from the UART buffer, and a state communication machine similar to the one in the choreography app.\\
+
+One notable difference between the communication behavior of cubli compared to the app is that its communication state machine is triggered regularly rather than on specific event occurences.
+
+\subsubsection{ChoreographyManagement Task}
+
+The choreography management task is only active during choreography, in which case it keeps track of the current primitive and run time, and adjusts the mode accordingly. It also implements behavior for pausing the choreography and notifying other cubes through the communication management when a move fails.
+
+\subsubsection{TimelineStatus Task}
+
+This code is responsible for storing the timeline information.\\
+
+A cube stores only one timeline, its current timeline, which it does not modify. Alongside it, is a 'cache', a temporary timeline which is filled during sync, and then copied to the current timeline if the sync was successful, or discarded if unsuccessful.\\
+
+[Limits of timeline storage, etc]
+
+\subsubsection{Controller Tasks}
+Some controller tasks were modified, to the smallest necessary extent, to fit with the choreographer functionality. Care was taken to ensure that the controller behavior would remain unchanged outside of choreography (i.e. with the relevant code sections being bypassed by if-clauses checking for choreography activity)
+
+Three functionalities had to be added in the controllers' code:
+\begin{itemize}
+\item the ability for cubli to fall down to a face on its own
+\item regulating the braking time to help synchronize choreographies
+\item notifying the choreography management task when primitives are successful
+\end{itemize}
+
+
+
+    
+
+
+

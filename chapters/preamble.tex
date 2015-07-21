@@ -1,0 +1,77 @@
+%---------------------------------------------------------------------------
+% Preface
+
+\chapter*{Preface}
+
+Blah blah \dots
+
+ \cleardoublepage
+
+%---------------------------------------------------------------------------
+% Table of contents
+
+ \setcounter{tocdepth}{2}
+ \tableofcontents
+
+ \cleardoublepage
+
+%---------------------------------------------------------------------------
+% Abstract
+
+\chapter*{Zusammenfassung}
+ \addcontentsline{toc}{chapter}{Zusammenfassung}
+
+Blah blah \dots
+
+
+ \cleardoublepage
+
+\chapter*{Abstract}
+ \addcontentsline{toc}{chapter}{Abstract}
+
+This Semester Project devises and implements a way of controlling one or several Cublis wirelessly.\\ 
+
+Cublis are cube-shaped, balancing robots developed at the IDSC lab in ETH Zurich, which have the peculiarity of being controlled by inertial reaction wheels inside the structure. As such, they can have no exterior moving parts while still being able to jump, balance on corners and edges, and even spin.\\ 
+
+The interface is developed as a computer application, presenting on the user with tools for creating a choreography - that is, a sequence of actions a cubli should perform, - running, and stopping it.\\ 
+
+The application then communicates wirelessly with one or several cublis in order to have them execute those actions. In order to achieve that, a custom communication protocol is created, allowing the cubes and computer to transfer data to each other via serial port.\\ 
+
+An intended consequence of this interface and protocol, is that the implementation of the above opens up further possibilities in several directions, for later projects. 
+For example, since this implements a way for cubli to send, receive, and interpret messages, it leads to the possibility of making cublis interact with each other, in the sense of working together responsively in any scenario, not just in a choreography.
+The fact that cubli's interface is now augmented also means that it would be simpler to implement complex behaviors such as moving around in any direction through consecutive jumps, or balancing on arbitrary corners.
+
+
+ \cleardoublepage
+
+%---------------------------------------------------------------------------
+% Symbols
+
+\chapter*{Nomenclature}\label{chap:symbole}
+ \addcontentsline{toc}{chapter}{Nomenclature}
+
+\section*{Symbols}
+\begin{tabbing}
+ \hspace*{1.6cm} \= \hspace*{8cm} \= \kill
+ $\mathrm{EHC}$ \> Conditional equation \> [$-$] \\[0.5ex]
+ $e$ \> Willans coefficient \> [$-$] \\[0.5ex]
+ $F,G$ \> Parts of the system equation \> [\unitfrac[]{K}{s}]
+\end{tabbing}
+
+\section*{Indicies}
+\begin{tabbing}
+ \hspace*{1.6cm}  \= \kill
+ a \> Ambient \\[0.5ex]
+ air \> Air
+\end{tabbing}
+
+\section*{Acronyms and Abbreviations}
+\begin{tabbing}
+ \hspace*{1.6cm}  \= \kill
+ NEDC \> New European Driving Cycle \\[0.5ex]
+ ETH \> Eidgen\"{o}ssische Technische Hochschule
+\end{tabbing}
+
+ \cleardoublepage
+
+%---------------------------------------------------------------------------
