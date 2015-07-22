@@ -134,21 +134,21 @@ Identification: In a scenario where only one cubli and computer communicate, it 
 
 There would be several ways to implement this, notably at the packet level - for example, using some bits from each packet to encode the sender - or at the message level - each group of chunks containing a header with the relevant information.\\
 
-The principal advantage of the first method is that it enables the removal of transmission failures in the case of simultaneous emission, as it allows identification of packets in any situation. In simpler terms, for example if two packet sequences are sent simultaneously by two devices: the orginal sequences can still be disambiguated by organizing packets based on the senders - which are encrypted in every byte - and the garbled messages can thus be reassembled.
+The principal advantage of the first method is that it enables the removal of transmission failures in the case of simultaneous emission, as it allows identification of packets in any situation. In simpler terms, for example if two packet sequences are sent simultaneously by two devices: the orginal sequences can still be disambiguated by organizing packets based on the senders - which are encrypted in every byte - and the garbled messages can thus be reassembled.\\
 
-However, it also means that the more devices a protocol accepts, the lower the amount of information available in each packet for data itself. For example, if a maximum of 10 devices can be connected at once, 3 bits of every byte must now be dedicated to identification metadata, which leaves 5 bits for data: instead of 255 possible values p. packet, we now have 32. This is disadvantageous as the amount of "wasted" space increases significantly with message size when using this method.\\
+However, it also means that the more devices a protocol accepts, the lower the amount of information available in each packet for data itself. For example, if a maximum of 10 devices can be connected at once, 3 bits of every byte must now be dedicated to identification metadata, which leaves 5 bits for data: instead of 255 possible values p. packet, we now have 32. This is disadvantageous as the amount of "wasted" space does not decrease as the message size increases, when using this method.\\
 
 \begin{figure}[ht]
    \centering
-   \includegraphics[width=0.75\textwidth]{img/disambiguation.png}
+   \includegraphics[width=1\textwidth]{img/disambiguation.png}
    \caption{Recovering mixed-together messages with packet-level or message-level sender identification.}
    \label{img:disambiguation}
 \end{figure}
 
-It follows that the second method is preferable where the risk of simultaneous message emission is relatively low. We see later that this is indeed the case. \\
+It follows that the second method is preferable where the risk of simultaneous message emission is relatively low. We see later that this is indeed the case here. \\
 
 
-Verification: Does this project require that the integrity of messages be verified? For any scenario where the rate of successful transmission can be expected to be lower that 100\%, ensuring that messages are emitted and received as intended is essential. In addition, though it requires extra effort during development, the necessary overhead to verify message contents during operation is low enough that it would be reasonable to implement it here even if a \~100\% transfer rate was expected.
+Verification: Does this project require that the integrity of messages be verified? For any scenario where the rate of successful transmission can be expected to be lower than 100\%, ensuring that messages are emitted and received as intended is essential. In addition, though it requires extra effort during development, the necessary overhead to verify message contents during operation is low enough that it would be reasonable to implement it here even if a transfer rate close to 100\% was expected.
 
 
 
@@ -169,9 +169,11 @@ Of the two factors taken into account above, the second, that is the disruptions
 
 For this reason, failures can at the start be incorrectly evaluated, their consequences or the responses misunderstood, or even simply not expected. As the project progresses, the actual importance of failures - through both factors - becomes gradually clearer.  This evolution leads to modification of the planned implementation in order to account for these corrections.
 
-\subsection{Choreography Failures}
+\subsection{Choreography Failure Handling}
 
 Cubli's ability to learn and perform movements is impressive and works very well. It still happens that moves fail with varying likelihoods - especially difficult moves. This is the principal source of failure in a choreography.
+
+Thus, it is expected that this mode of failure has both a significant probability of occurence, and unarguable ability to disrupt the intended execution of a choreography.\\
 
 As such, the strategy for recovering from failed moves is important, and though in any case the perfect execution of the choreography is lost when such a failure happens, different recovery methods work to salvage different aspects of the remaining choreography execution.
 
@@ -187,11 +189,45 @@ The particularities of this strategy are as follows:
 \item[+] Almost no intervention is required, and the communication cost, as well as likelihood of aggravating a failure are low.
 \end{itemize}
 
-\item[B.] Notifying all cubes in case of failure, pausing all devices until the issue is resolved, and then resuming all the choreography all at once.
+\item[B.] Notifying all cubes in case of failure, pausing all devices until the issue is resolved, and then resuming the choreography all at once.
 
 \begin{itemize}
 \item[-] The more procedures are put in place to ensure the correct behavior of all cubes, and the exactitude of sync, the more complex this strategy, and the longer it takes before choreographies resume. 
 \item[+] If done correctly, the simultaneity of all timelines is preserved, and only the length of the global choreography is increased by a failure.
 \end{itemize}
 
+\item[C.] Starting over, or aborting a choreography if a failure occurs.
+
+\begin{itemize}
+\item[-] In the case that failures are somewhat frequent, choreographies will be repeated endlessly, or never reach their end.
+\item[+] Strictly ensures the simultaneity of timelines, and integrity of any choreography that has completed.
+\end{itemize}
+
 \end{description}
+
+It is thus up to the implementer to decide, based on which choreography aspects are the most important to conserve, the appropriate method. It should also be noted that each of those methods also presents several alternatives regarding implementation details, which also play a role in their resulting efficiency. These particulars are discussed in the following chapter, which delves into the details of implementation.
+
+\subsection{Communication Failure Handling}
+
+At the outset, the probability of occurence for such failures was expected to be low, yet not insignificant. As for the disruption caused by this event, it should vary based on the situation in which it occurs ( for example at a time-critical moment of the choreography, a failed transmission can have a much greater impact on the performance ), and the accumulation of communication errors.
+
+If several messages in a row fail to reach their recipients, the deviation from desired behavior can widen critically.\\
+
+The response to this issue must be proportionate to the risk they cause, and since very little is known at the start regarding actual message delivery rates, the various scenarios are all to be considered.\\
+
+If messages are rarely, if ever dropped, chances of several messages being dropped in a row become negligible. In such a scenario, communication protocols which perform a single check, or no check ( messages are assumed as delivered unless notified otherwise ), are sufficient in nearly all cases. Extra measures are not immediately necessary.\\
+
+When messages have a significant probability of being dropped, and the same applies to errors occuring several times in a row, the communication protocol must become increasingly complex to ensure that resulting behavior is still reasonable. Each message must be sent over and over until a confirmation is received, and it should also be expected that confirmations have to be sent several times in case they are also dropped. Timeout delays must be introduced, to ensure that every back-and-forth exchange has a chance to complete.\\
+
+As the probability of failure increases, it becomes increasingly likely that back-and-forth exchanges of information are unable to complete in reasonable time. Communications must also be reduced to a minimum, which can mean significant changes in the organisation of devices.\\
+
+The actual protocols which were developed for this project are detailed in the next chapter.
+
+\subsection{User Input Error Handling}
+
+A hard to predict mode of errors in a human-controlled environment are nonsensical inputs which can occur when the user makes a mistake, or the interface leads to misunderstanding - for example if it is not designed optimally.\\ 
+
+One aspect of an system is its tolerance to unrecognized/illrecognized inputs, and how strictly it attempts to prevent them from occuring, or corrects them. In this project: the aim was for the limits of possible interactions to be intuitively clear to the user. Contradiction to the user's commands must be avoided, and in the event of incoherent input, if a correction is to be made it should be the smallest correction leading to acceptable behavior. In addition it must be accompanied by a notification of this correction, communicated to the user in a non-intrusive way.\\
+
+This philosophy can be understood in practice. For example, in the implementation of choreography completion, which defines how the application adds "missing" moves when the user places together actions that can not rationally follow one another.
+

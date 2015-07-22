@@ -134,7 +134,7 @@ The inability to work with the assumption that 'the majority of messages would b
 
 Principally, this code transforms a message's code, additional content, and metadata into a normalized string of characters which can be sent one byte at a time over UART. And vice-versa.\\
 
-The message \\
+It is here that the structure of a message is defined, and this code is valid on both Cublis and the choreography application.\\
 
 [Message deconstruction] \\
 
@@ -158,10 +158,101 @@ It also contains two compile flags:\\
     
 \end{itemize}
 
+\subsection{Information Reception \& Decryption}
+
+The way Cublis and the choreographer application handle UART information is similar, although there are specific details that differ.\\
+
+The step-by-step process of reception and decryption in both device types is as follows:\\
+
+\begin{itemize}
+\item At the lowest level, and on every device, all bytes emitted over UART are immediately captured and stored into a buffer - whether they are part of a message or not. The only exception, of course, are the bytes which fail to transmit for one reason or other.
+
+\begin{description}
+\item[In Cubli,] the buffer in question is a ring buffer named \textit{rx\_buf}. The interrupt routine \textit{USART1\_IRQHandler()} checks whether a byte has been stored in the UART register. If it has, it places the byte into \textit{rx\_buf} and empties the UART data register. Over time, the buffer fills up with sequences of bytes, and stops storing them when full. Since these interrupts are designed to be as light as possible, the actual emptying, and reading of the buffer has to be done somewhere else. In this case, the ComManagement task is responsible for that among other things, and does so in a periodic manner.
+\item[In the Choreographer,] similar behavior is implemented in appropriate libraries. At this point, the aspect which differs from the cubli implementation is that these libraries are configured to immediately handle data after a burst of bytes is received - i.e. a call is made to the function \textit{readData()} after every group of bytes which are sent in quick succession. \textit{readData()} contains the next step in handling and decryption of the information.
+As such, cubli performs the next step periodically, while the choreographer app does so in a responsive manner.
+\end{description}
+
+\item Next, the data present in the low-level buffers described above are appended to a second, higher-level buffer, which is accessed less often. The contents of this second buffer are passed to the \textit{decrypt\_message()} function in com\_protocol.c. If a message is present in these contents, it is disassembled, and verified. If a message is not intended to have the current device as a recipient, it is discarded. If its length or hash is invalid, it is also discarded.
+
+\begin{description}
+\item[In Cubli,] this step is done inside the ComManagement task. Particularities are: the buffer is erased and overwritten on every loop of the task, instead of having the new data appended to it. This is due to the fact that testing of the append-data method yielded worst results, against expectations. \textit{ It is hypothesised that the period of the ComManagement task being larger than the time it takes for the choreographer to emit an entire sequence of bytes composing a message, and that length of time being extremely small, chances of messages being separated is very low. Low enough that the append-data method's advantage, that is, reconstitution of separated messages, is not significant enough to compensate the performance loss due to increase in task complexity.}
+\item[In the Choreographer,] data is appended on the high-level buffer, thus separated messages are reconstituted. This was shown to have a significant positive impact, as the likelihood of messages being separated upon reception by the choreographer app is higher - likely due to the event-based nature of the choreographer UART data handling.
+An interesting point is the fact that as soon as the first message present in the buffer is read ( more precisely, if \textit{decrypt\_message()} returns a non-zero value ), the entire buffer is cleared and any messages already present in the remaining bytes is thus thrown away. This was done to keep up with the high communication frequency that can arise - in the case where messages are emitted too fast, if the app were to treat every single one it would progressively lag behind ( this has been tested, and is effectively the case ). 
+\end{description}
+
+\item At this point, the devices can handle the decrypted message, thanks to their appropriate communication state machines. 
+
+\begin{description}
+\item[In Cubli's case,] the absence of any data, or the presence of data which does not contain a valid message are also handled. This is useful as a consequence of the periodic aspect of the ComManagement task. 
+\item[In the Choreographer,] button or interface events can also be passed to the state machine, in order to have communication responses to those inputs.
+\end{description}
+
+\end{itemize}
+
 \subsection{Protocols}
 
-\subsubsection{When Syncing}
+The protocols which determine the communication behavior of every device are strongly dependent on the situation, more precisely the state in which a device is. \\
+
+This is due to the significant transmission failure rate experienced during the project. 
+
+Such a transmission rate means that not every desired aspect of a program can be attained, and the type of protocol used determines which aspect is impacted most when transmissions fail. Each situation had different critical aspects which needed to be prioritized, thus the protocols had to be adapted accordingly.\\
+
+In this report, a \textit{communication protocol} refers to the rules of communication between devices, which state what the standard procedure is in a back-and-forth exchange of information, and all alternate procedures if at any point a message fails to transmit.\\
+
+Such a standard procedure can for example be explicited as follows:
+\begin{itemize}
+\item[] \textbf{A to B:} "start of protocol"
+\item[] \textbf{B to A:} "confirmation"
+\item[] \textbf{A to B:} "end of protocol"
+\end{itemize}
+
+when all involved parties have received their intended messages, the protocol is considered as having completed successfully.
+
+Alternate procedures describe the prescribed response when a message from the standard procedure is not delivered as intended.
+
+\subsubsection{In General}
+
+Some proprieties of the communication protocols created for this project are generally true.
+
+The last message of any protocol procedure is a sensitive one, as there is nothing in the procedure itself that allows the emitting party to be aware of whether the receiving party has successfully collected it ( if an extra confirmation is added for this purpose, this confirmation becomes the last message of the protocol, and the same issue applies once again. And so on. ). 
+It is therefore to be expected that one device, having not received the ultimate message of the protocol procedure, is still expecting it, while the other device, having sent it, considers the protocol procedure completed.
+In that case, or if for any other reason one device remains stuck in procedure while the other one does not - e.g. if one of the two is reset unexpectedly - it is necessary to implement general or specific protocol-aborting procedures.\\
+
+For example the use of a timeout allows such a stuck-device to exit the procedure by itself.
+Another solution, used to good effect in this project, is to allow devices to respond to these tell-tale "second-to-last messages" with the correct protocol terminating message, without themselves being in the same state.\\
+
+An illustration of this, for clarification purposes; take the example protocol illustrated previously:
+
+\begin{itemize}
+\item[] \textbf{A to B:} "start of protocol"
+\item[] \textbf{B to A:} "confirmation"
+\item[] \textbf{A to B:} "end of protocol"
+\end{itemize}
+
 \subsubsection{When Connecting}
+
+The choreographer application needs to know which cubes are connected, and which aren't. This is in order to spare the user the necessity of manually adding and removing cubes, as well as the possible errors that come with it ( mislabeled cubes, non-existant cubes, ... ). Cublis, however, have no need to know wether they are connected or not - the app either sends them commands and information, or it does not.
+
+As a result, the connection protocol is not symmetrical. 
+
+\begin{description}
+\item[Standard protocol procedure]:
+
+\begin{itemize}
+\item[] \textbf{Cubli to PC:} "connect"
+\item[] \textbf{PC to Cubli:} "connect"
+\item[] \textbf{Cubli to PC:} "received"
+\end{itemize}
+
+at which point, the application changes the appropriate cubes status to "Unsynced"
+\item[Alternate procedures]:
+
+\begin{itemize}
+\item If first message is not received
+\end{itemize}
+\end{description}
+\subsubsection{When Syncing}
 \subsubsection{When ...}
 
 \section{Cubli}

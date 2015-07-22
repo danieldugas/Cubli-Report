@@ -67,24 +67,28 @@ Press the apply button and wait for the app status to show "Sync Successful".\\
 \textbf{Note:} It sometimes occurs that a cube does not respond too long while syncing, in which case the sync is cancelled by the application, and that cube is disconnected. In that case, ensure that the cube is turned on and functional before trying again.\\
 
 Once the sync is successful, all connected cubes have the choreography stored in the exact state it was when the apply button was pressed. 
-At this point further modifications to the timelines in the app will not be synced until the apply button is pressed again.
+At this point further modifications to the timelines in the app will not be synced until the apply button is pressed again.\\
 
-\textbf{Note:} Timelines are not deleted when a cube is disconnected, in order to prevent accidentally deleting choreography data. As such, they remain visible, but will not be synced until the cube is reconnected. Reconnecting to a cube is the same process as in the '\textit{Connecting to Cubli}' step above.
+\textbf{Note:} Timelines are not deleted from the editor panel when a cube is disconnected, in order to prevent accidentally deleting choreography data. As such, they remain visible, but will not be synced until the cube is reconnected. Reconnecting to a cube is the same process as in the '\textit{Connecting to Cubli}' step above.\\
+
+\textbf{Note:} In addition, when Cubli is turned off, all timeline information is cleared from its memory. As a result, it is necessary to once again sync any cube that has been restarted.
+
+
 
 
 \section{Run the Choreography}
 
-Once a timeline is stored in the cube, it is able to execute the choreography. 
+Once a timeline is stored in the cube, it is ready to execute the choreography. 
 
 In order to do so press the "Play" button.\\
 
-This will initiate a countdown to the start of the choreography, during which all cubes must confirm that they are performing. If one cube or more do not provide confirmation the choreography is cancelled and must be attempted again.\\
+This will initiate a countdown to the start of the choreography, during which all cubes must confirm that they are performing. If one cube or more do not provide confirmation the choreography is cancelled and must be attempted again. The non-responsive cube is automatically marked as disconnected.\\
 
-It is also possible to manually cancel the countdown by pressing the "Play" button, which is now displaying the countdown value.\\
+It is also possible to manually cancel the countdown by pressing the "Play" button, which is at this point displaying the countdown value.\\
 
 After the countdown the choreography is started, and cubes will attempt to complete their current primitive even if they fail. No user interaction with the app is necessary, however in the event that they fall on an unrecoverable face, cublis must manually be reset back to their main face.
 
-
+[figure: Cubli set-up on its main face. Note the orientation of the buttons on the front-facing panel ]
 \section{Stop the Choreography}
 
 The choreography stops automatically when it reaches its natural end, that is when all cubes have completed their last primitive. \\
