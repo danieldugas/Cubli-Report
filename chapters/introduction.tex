@@ -20,7 +20,7 @@ On top of its ability to balance, Cubli is also able to jump through well-timed 
    \label{img:Jumps}
 \end{figure}
 
-\subsection{Current Interface}
+\subsection{Original Interface}
 
 Actions can be executed by pressing buttons visible on one of cubli's faces ( \textit{See Figure \ref{img:Buttons}} ). For example, pressing the Mode button once while holding cubli on its edge at a stable angle will cause it to start balancing. Or, when cubli is on its face, press the mode button once and it jumps up to its edge.\\
 
@@ -31,6 +31,45 @@ Actions can be executed by pressing buttons visible on one of cubli's faces ( \t
    \label{img:Buttons}
 \end{figure}
 
+Though this is a very reliable interface, it can present inefficiencies. For example, it is sometimes desirable to press the mode button when cubli is balancing, in order to have it perform an action. However, doing so upsets cubli's balance, since pressing a button implies exerting a force on cubli's exterior.\\
+
+This project's proposition is to offer an alternate interface, without removing the already existing one - the buttons shall still serve their original functions. Controlling cubli from a nearby device presents interesting challenges and possibilities, thus making for a promising aim.
+
+\subsection{Original Communications Abilities}
+
+Before the project was started, Cubli was already fitted with a wireless communication device, set up for one-way communication from cubli to computer, for debugging and supervision purposes.\\
+
+\begin{figure}[ht]
+   \centering
+   \includegraphics[width=0.75\textwidth]{img/LAIRD-radio.jpg}
+   \caption{Radio used in the Cubli hardware.}
+   \label{img:LAIRD-radio}
+\end{figure}
+
+As such it made sense to consider developping two-way communications using the already-present hardware, and the potential applications of this modification.\\ 
+
+Because physical interaction with the robot generally hinders its ability to balance and move freely, wireless communication is a desired part of the new interface's implementation.
+Yet it is even more important than that.\\
+
+The project aims to extend the interface, but also to test Cublis ability not only to simply receive commands from the user, but also to communicate in a multilateral fashion. That is, to set the basis for smarter Cublis that can exchange information, and display responsive behavior. 
+
+\section{Project Goals}
+
+As the previous section outlines the original capabilities of Cubli, and how the project is in general going to affect them, this section lays out the practical implementation which is sought. This implementation is meant to showcase the properties ( some of which were expressed previously ) which are:
+\begin{enumerate}
+\item augmented interface
+\item responsiveness
+\item multiple cubli coordination
+\item further feature potential.
+\end{enumerate}
+
+Thus the Cubli choreographer concept was created: An interface allowing not only for wireless control of a Cubli, but also allowing for the introduction of more independent and responsive behavior.\\
+
+By giving the robot not straightforward commands, but more complex sequences which it needs to store and perform - acting autonomously to ensure the correct proceeding of those sequences, and reacting to failures - the interface delegates agency to the cube.\\
+
+In addition, the choreographer shall be designed to interact with several cublis at once, coordinating their actions.\\
+
+Thus, should the concept be proved to be realizable, it will effectively showcase the desired properties outlined in the previous paragraph.
 
 
 
