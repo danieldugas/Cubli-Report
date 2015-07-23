@@ -82,11 +82,15 @@ For this purpose, within this projet the timeline canvas, or "Graphics Scene" in
 
 \subsubsection{Timeline - Technical Addendum}
 
+QT allows the interception of mouse events inside the Timeline area through several functions, of which \texttt{MousePressEvent(), MouseMoveEvent(), MouseReleaseEvent(),} and \texttt{MouseDoubleClickEvent()} are used here. Each one of these functions is executed upon the appropriate event, \texttt{MousePressEvent()} in particular gets triggered by both left and right mouse clicks.  \texttt{MouseDoubleClickEvent()} replaces \texttt{MousePressEvent()} when the relevant click is second in a series.
+
 Programmatically this behavior was encoded as follows: 
 
 \begin{itemize}
-\item When the left mouse button is pressed within the timeline bounds, the application checks whether a primitive is present under the cursor. Depending on whether that is the case, different actions are assigned to mouse events immediately following this one. Furthermore, the primitive present under the cursor, if any, is selected for later handling 
-\item ...
+\item[] \texttt{MousePressEvent()}: When a mouse button is pressed within the timeline bounds, the application checks whether a primitive is present under the cursor. In the case that the right mouse button was pressed, the primitive under the cursor is immediately deleted. Otherwise, the primitive under the cursor, if any, is simply marked ( "selected" ) for later. No further action is undertaken until another mouse event occurs. 
+\item[]  \texttt{MouseMoveEvent()}: If a primitive is currently selected, it follows the position of the cursor, as far as collisions allow it.
+\item[]  \texttt{MouseReleaseEvent()}: If a primitive is currently selected and no mouse movement was made, it is transformed into the next primitive type. If a primitive is currently selected and mouse movement was made, its type remains unchanged. If no primitive was selected, a new one is created. The primitive information panel is updated to reflect the latest selected or created primitive, and any selected primitive is unselected.
+\item[]  \texttt{MouseDoubleClickEvent()}: In order to stay consistent with single click behavior, this function does exactly what a \texttt{MousePressEvent()} does.
 \end{itemize}
 
 
@@ -98,12 +102,14 @@ This class provides methods for easily accessing certain properties, modifying, 
 
 \subsubsection{ComStateManager}
 
- The ComStateManager class is the part of the application which handles communication responses, i.e. \textit{what to send and when}.
+ The ComStateManager class is the part of the application which handles communication responses, i.e. \textit{what to send and when}.\\
  
 Any message sent to the cube from the app means a call to this class. It is also where cube statuses are stored, which allow it and other parts of the application to take into account whether particular cubes are connected or not, syncing or not, and so on.\\
 
 Which message must be sent is necessarily determined in this class' logic.
-It accomplishes this through a state machine, that has a corresponding response for every incoming message or application call.
+It accomplishes this through a state machine, that has a corresponding response for every incoming message or application call.\\
+
+The protocols described in the next section are mostly encoded in here ( messages which are sent several times in a row originate from \texttt{mainwindow.cpp} code )
 
 \subsubsection{SettingsDialog}
 
