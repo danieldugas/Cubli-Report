@@ -284,7 +284,7 @@ In addition, the OS also deals with interrupt routines and more specific functio
 \begin{itemize}
 \item The ModeManagement task is repeated every few milliseconds. On every loop, it checks wether the ModeNumber was changed - or the ReRunModeManagement variable has been set . If either of those conditions are true, it updates the controller task management variables according to the current new ModeNumber.\\
 
-Furthermore : 
+\textbf{Furthermore :} 
 \begin{itemize}
 \item[] Before updating those variables, it checks that the ModeNumber was not changed two consecutive times in short order - indicating an involuntary double button press .
 \item[] As the ModeNumber can also be changed from within a Controller task - at later stages of this process - the ModeManagement
