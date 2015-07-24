@@ -15,7 +15,7 @@ Running tests to quantify the quality of communications between Cublis and Compu
 
 As such we observe that on average, there is a 30\% chance of cubli collecting a message. This further means that if we are to send cubli the same message 5 times, the probability of at least one message being successfully received is 85\% and for 10 identical messages, the same probability becomes 97\% .\\
 
-In addition, tests were ran at 50 ms ComManagementT Delay, replacing the wireless adapter with a direct wired connection to the PC, and over a large amount of messages the resulting success rate for reception in Cubli increased to 50\%. It is therefore hypothesized that the remaining 50\% of losses originate from inside the software, particularly the way that UART is handled.\\
+In addition, tests were ran at 50 ms ComManagementT Delay, replacing the wireless adapter with a direct wired connection to the PC, and over a large amount of messages the resulting success rate for reception in Cubli increased to 50\%. It is therefore hypothesized that the remaining 50\% of losses originate from inside the software, particularly the way that UART reception is handled.\\
 
 Running similar test during other protocols yields similar results, with Cubli's reception rate rarely exceeding 40\%.\\
 
@@ -23,7 +23,7 @@ A rare but several times observed occurrence was a crash of the cubli software, 
 
 Finally, through all the tests , and the whole project, messages from two cublis were never observed to have mixed with one another. As the probability of such an occurrence was expected to be low, this is not such a surprise. However it shows that the order of magnitude of that likelihood is even smaller than expected - certainly due to the short time of UART emission at the Baud rate of 115200 bits per second. \textit{ Thought experiment: At a 100 bits per message, in theory such a baud rate implies that it takes 0.8 ms to send a message. Knowing that Cubli sends a message at most once every 50 ms with the current settings, the chance of two cublis accidentally sending a message at the same time can be (very) approximately calculated as $\frac{0.8}{50}$, that is 1.6\% }.
 
-\subsection{Protocols Effectiveness}
+\subsection{Protocol Effectiveness}
 
 Knowing the rate at which single messages are statistically dropped, it is interesting to quantify the success of communication protocols in ensuring complete and timely transfer of data between devices. \\
 
@@ -41,17 +41,27 @@ Adding more cublis would arguably further degrade the performance, at which poin
 
 Because timeline syncing is sequential, that is, only one Cubli is synced at a time, the success rate is not heavily affected by the presence of multiple cubes - outside of the probabilistic combination of several events, i.e. the probability of two cublis syncing correctly is a square of the probability for one cubli.\\
 
-\textbf{The choreography initating sequence}, 20 times out of 20, has completed successfully.
+\textbf{The choreography initating sequence}, when tested, has completed successfully 20 times out of 20. Testing was conducted using two cubes. Through non-experimental use, failures of the protocol are sometimes, though rarely observed. Thus, the success rate of this protocol can conservatively be considered to lie between 90\% and 100\%. 
+
+\section{Concept Validation}
+
+Although some aspects have evolved during development, the initial project vision has been realized with success. 
+
+Much has been learnt in the process,
 
 \section{What's next}
 
-This project's execution gives quite an optimistic outlook to future Cubli possibilities.
+This project having reached its end, the outlook towards future Cubli possibilities is optimistic. Each conceptual goal developed, and fulfilled, has created potential avenues of innovation, and inspired ideas for future work on making Cubli an ever more capable robot.\\
 
-Jumping from any face/slanted position
+A few examples of such promising concepts are detailed here:
 
-No computer
+\begin{itemize}
+\item Jumping from any face/slanted position
 
-Defining not just actions but movements ( go from A to B )
+\item No computer intervention - interactive cublis
+
+\item Defining not just actions but movements ( go from A to B )
+\end{itemize}
 
 Above is much easier if the communications obstacle is overcome
 

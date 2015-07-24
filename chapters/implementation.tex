@@ -125,7 +125,7 @@ The source for the message protocol fits inside one cpp file and accompanying he
 
 Of course, the concept of communication protocol as a whole pertains to more than uniquely this message-transmission code. It also englobes the determination of how the machines ought to behave when contacting each other, which in practice is encoded all over their code ( see communication state machines, MainWindow, etc ). However for the sake of consistency the particulars of these protocols are discussed here.\\
 
-One of the difficulties during this project was the unreliability of the UART behavior in the cubli microcontroller. Thankfully the communication protocol was designed to be quite robust from the get-go, which seemed at the time like a potentially unnecessary amount of safety, though it proved essential.
+One of the difficulties during this project was the unreliability of the UART behavior in the cubli microcontroller ( \textit{See Figure \ref{img:USART}} ). Thankfully the communication protocol was designed to be quite robust from the get-go, which seemed at the time like a potentially unnecessary amount of safety, though it proved essential.
 
 \begin{figure}[ht]
    \centering
@@ -140,27 +140,88 @@ The inability to work with the assumption that 'the majority of messages would b
 
 Principally, this code transforms a message's code, additional content, and metadata into a normalized string of characters which can be sent one byte at a time over UART. And vice-versa.\\
 
-It is here that the structure of a message is defined, and this code is valid on both Cublis and the choreography application.\\
+It is here that the structure of a message is defined, and this code applies to both Cublis and the choreography application.\\
 
-[Message deconstruction] \\
-
+This message structure is as follows:
+\begin{itemize}
+\item[] Messages begin with a \textbf{start-byte}. This allows the code to more efficiently decrypt messages among garbage in a buffer.
+\item[] The \textbf{message length} is encoded in the next byte, so as to allow the decryptor to know where the message ends.
+\item[] The next two bytes are, respectively, the \textbf{sender ID} and \textbf{recipient ID}.
+\item[] Then comes the \textbf{message code}, first part of a message's actual content.
+\item[] Second part of the message's content, are three potential \textbf{extra-content} bytes.
+\item[] If the verbose flag is set, a \textbf{human-readable description} of the message and extra-content is inserted at this point.
+\item[] The last two bytes of every message encode the \textbf{hash}, used for verifying message integrity. When decrypting messages, bits are mixed together according to a common algorithm, and the result is compared to the hash bytes carried by the message. Should they not match, the message is discarded as garbage.
+\end{itemize}
 
 \subsubsection{Header}
 
 The header, com\_protocol.h contains enumerations for all the message codes, communications states, and a few other which are shared between cubli and computer, as well as some macro expansions which concern communication settings.\\
 
-[Message code table]\\
+\textit{Message Codes}\\
 
-It also contains two compile flags:\\
+Message codes are defined as an enumeration, and automatically assigned integer values. \textit{See Table \ref{tab:mcodes}}.
+
+\begin{table}[ht]
+\begin{center}
+\caption{Message codes and their string labels, as defined in \texttt{com\_protocol.h} and \texttt{com\_protocol.c}.}\vspace{1ex}
+\label{tab:mcodes}
+\begin{tabular}{ll}\hline
+Message Code & Corresponding String ( Verbose ) \\ \hline 
+COM\_MCODE\_NOTHING             & "|"                  \\
+COM\_MCODE\_NOMESSAGE           & "|?"                 \\
+COM\_MCODE\_ERROR               & "|Error"             \\
+COM\_MCODE\_WAITING             & "|Waiting"           \\
+COM\_MCODE\_CHECK               & "|Check"             \\
+COM\_MCODE\_RECEIVED            & "|Received"          \\
+COM\_MCODE\_RECEIVED\_PART      & "|Received:"         \\
+COM\_MCODE\_SHUTDOWN            & "|Shutting Down"     \\
+COM\_MCODE\_CONNECT             & "|Connect"           \\
+COM\_MCODE\_DISCONNECT          & "|Disconnect"        \\
+COM\_MCODE\_BGN\_SND\_TMLN      & "|BeginTT:"          \\
+COM\_MCODE\_END\_SND\_TMLN      & "|FinishTT"          \\
+COM\_MCODE\_ABORT\_SND\_TMLN    & "|AbortTT"           \\
+COM\_MCODE\_SND\_TMLN\_PART     & "|TTData:"           \\
+COM\_MCODE\_COUNTDOWN           & "|Start in:"         \\
+COM\_MCODE\_GOT\_COUNT          & "|Got count"         \\
+COM\_MCODE\_STARTED             & "|C'est parti!"      \\
+COM\_MCODE\_SUCCEEDED           & "|Move successful"   \\
+COM\_MCODE\_FAILED              & "|Move failed"       \\
+COM\_MCODE\_ACCUSE              & "|Other cube failed" \\
+COM\_MCODE\_STUCK               & "|Failed and stuck"  \\
+COM\_MCODE\_ACKNOWLEDGE         & "|Acknowledged"      \\
+COM\_MCODE\_RECOVERED           & "|Recovered"         \\
+COM\_MCODE\_STOP                & "|Stop Performance"  \\
+COM\_MCODE\_RESUME              & "|Resume in:"        \\
+COM\_MCODE\_FINISHED            & "|Ended Performance" \\
+COM\_BCODE\_CHECK\_CUBES        & "|BCODE"             \\
+COM\_BCODE\_START\_IN           & "|BCODE"             \\
+COM\_BCODE\_STARTED             & "|BCODE"             \\
+COM\_BCODE\_TRANSFER            & "|BCODE"             \\
+COM\_BCODE\_ABORT\_TRANSFER     & "|BCODE"             \\
+COM\_BCODE\_ABORT\_PERFORMANCE  & "|BCODE"             \\
+COM\_BCODE\_RESUME\_PERFORMANCE & "|BCODE"             \\
+COM\_MCODE\_DEBUG               & "|DEBUG"             \\
+COM\_N\_MESSAGE\_CODES          & [Not a valid code]  \\
+ \hline
+\end{tabular}
+\end{center}
+\end{table}
+
+BCODEs, short for Button Codes, are message codes which are internal to the choreographer application. They are used to convey button inputs or events to the communications state machine, and are not meant to be transmitted over UART.\\
+
+
+\textit{Compile flags}\\
+
+The header also contains two compile flags:\\
 
 \begin{itemize}
 \item[] COM\_VERBOSE
 
-	if this flag is defined, messages also contain a human-readable appendix expliciting the relevant message code, and extra content.\\
+	if this flag is defined, messages also contain a human-readable appendix expliciting the relevant message code, and extra content. By default, this flag is defined.
 
 \item[] COM\_DEBUG
 
-	if this flag is defined, extra information pertaining to failure when decrypting messages is displayed as plain text. This is for example useful when messages are not getting decrypted though they are transmitted correctly.
+	if this flag is defined, extra information pertaining to failure when decrypting messages is displayed as plain text. This is for example useful when messages are not getting decrypted though they are transmitted correctly. By default, this flag is not defined.
     
 \end{itemize}
 
@@ -301,7 +362,7 @@ See Figure \ref{img:Controllers} for a visual overview of this process.
 \begin{figure}[ht]
    \centering
    \includegraphics[width=0.75\textwidth]{img/Controllers.png}
-   \caption{Block diagram of tasks in the original \texttt{Controllers.c}.}
+   \caption{Block diagram of tasks in the original \texttt{Controllers.c}, illustrating the control flow for move executions.}
    \label{img:Controllers}
 \end{figure}
 
@@ -358,7 +419,7 @@ Three functionalities had to be added in the controllers' code:
 \begin{figure}[ht]
    \centering
    \includegraphics[width=0.75\textwidth]{img/ControllersChoreography.png}
-   \caption{Block diagram of tasks in this projects updated \texttt{Controllers.c}.}
+   \caption{Block diagram of tasks in this projects' updated \texttt{Controllers.c}, illustrating the control flow for move executions.}
    \label{img:ControllersChoreography}
 \end{figure}
 
