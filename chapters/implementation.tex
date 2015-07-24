@@ -269,17 +269,39 @@ This means that except for a few additional line of codes, the controllers remai
 
 These relevant parts are what will be discussed here, rather than the entire cubli source code.
 
-\subsection{Affected Tasks}
+\subsection{Refresher: Cubli Source Code }
 
-The main routines executed inside cubli softwares are managed by a realtime OS, which compartimentalizes them into various tasks, giving to each their respective processor access time, depending on their priority, period, and so on. This allows several processes to run in parallel, without necessarily affecting each other.
+Before the project additions are described, it is useful to understand how the already-existing Cubli code handles inputs and events, as well as its general structure.\\
 
-As an example, some tasks inside cubli are responsible for regularly checking that user inputs have been made, while others are responsible for the high-frequency control necessary during movements, such as the LQR controller task for balancing.
+The main routines executed inside cubli softwares are managed by a realtime OS, which compartimentalizes them into various tasks, giving to each their respective processor access time, depending on their priority, period, and so on. This allows several processes to run in parallel, without necessarily affecting each other.\\
 
-This subsection describes the code modifications and additions in this project, to the relevant tasks
+As an example, some tasks in the cubli source code are responsible for regularly checking that user inputs have been made, while others are responsible for the high-frequency control necessary during movements, such as the LQR controller task for balancing.\\
+
+In addition, the OS also deals with interrupt routines and more specific functions outside of tasks, of which only the UART interrupt routine and button-press event handler are relevant to this report.\\
+
+\subsubsection{From Button Press to Edge Balance}
+
+\begin{itemize}
+\item The ModeManagement task is repeated every few milliseconds. On every loop, it checks wether the ModeNumber was changed - or the ReRunModeManagement variable has been set . If either of those conditions are true, it updates the controller task management variables according to the current new ModeNumber.\\
+
+Furthermore : 
+\begin{itemize}
+\item[] Before updating those variables, it checks that the ModeNumber was not changed two consecutive times in short order - indicating an involuntary double button press .
+\item[] As the ModeNumber can also be changed from within a Controller task - at later stages of this process - the ModeManagement
+\end{itemize}
+
+\end{itemize}
+
+
+\subsection{Task Alterations}
+
+The bulk of the additions to the Cubli code affected tasks, with the modification of several existing tasks, and creation of 2 new tasks for communication and choreography management.
+
+This subsection describes the code modifications and additions to the relevant tasks performed in this project.
 
 \subsubsection{ModeManagement Task}
 
-Originally a task responsible for updating the global variables responsible for deciding which controllers get activated based on the current mode ( which is originally incremented through the press of a respective hardware button ), it keeps its functionality in this project.\\
+Originally a task responsible for updating the global variables responsible for deciding which controllers get activated based on the current mode ( which is originally incremented through the press of a respective hardware button ), this functionality is conserved and extended in this project.\\
 
 New modes are created for choreography, corresponding to the movement primitives, while the original modes are renamed to button modes, and relevant code sections are modified to make the new and original modes cohabitate. To this end, the original and old modes are distinguishable, allowing behavior which was only needed in old modes to be disabled for the new modes only.\\
 
@@ -289,9 +311,11 @@ New modes are created for choreography, corresponding to the movement primitives
 
 \subsubsection{ComManagement Task}
 
-This task contains both the code responsible for reading from the UART buffer, and a state communication machine similar to the one in the choreography app.\\
+Created during this project, the ComManagement task contains both the code responsible for reading from the UART buffer, and a communication state machine similar to the one in the choreography app.\\
 
-One notable difference between the communication behavior of cubli compared to the app is that its communication state machine is triggered regularly rather than on specific event occurences.
+One notable difference between the communication behavior of cubli compared to the app is that its communication state machine is triggered regularly rather than on specific event occurences. This is discussed in further details inside this chapter's \textit{Communications} section, in the \textit{Information Reception \& Decryption} subsection.\\ 
+
+As for the communication state machine, it implements the protocols which are described inside this chapter's \textit{Communications} section, in the \textit{Protocols} subsection. 
 
 \subsubsection{ChoreographyManagement Task}
 
@@ -306,6 +330,7 @@ A cube stores only one timeline, its current timeline, which it does not modify.
 [Limits of timeline storage, etc]
 
 \subsubsection{Controller Tasks}
+
 Some controller tasks were modified, to the smallest necessary extent, to fit with the choreographer functionality. Care was taken to ensure that the controller behavior would remain unchanged outside of choreography (i.e. with the relevant code sections being bypassed by if-clauses checking for choreography activity)
 
 Three functionalities had to be added in the controllers' code:
@@ -315,6 +340,11 @@ Three functionalities had to be added in the controllers' code:
 \item notifying the choreography management task when primitives are successful
 \end{itemize}
 
+\subsection{Other Alterations}
+
+UART routine
+
+Button-press event
 
 
     
