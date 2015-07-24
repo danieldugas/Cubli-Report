@@ -144,14 +144,25 @@ It is here that the structure of a message is defined, and this code applies to 
 
 This message structure is as follows:
 \begin{itemize}
-\item[] Messages begin with a \textbf{start-byte}. This allows the code to more efficiently decrypt messages among garbage in a buffer.
+\item[] Messages begin with a \textbf{start-byte}. This allows the code to more efficiently decrypt messages among garbage bytes in a buffer.
 \item[] The \textbf{message length} is encoded in the next byte, so as to allow the decryptor to know where the message ends.
 \item[] The next two bytes are, respectively, the \textbf{sender ID} and \textbf{recipient ID}.
 \item[] Then comes the \textbf{message code}, first part of a message's actual content.
 \item[] Second part of the message's content, are three potential \textbf{extra-content} bytes.
 \item[] If the verbose flag is set, a \textbf{human-readable description} of the message and extra-content is inserted at this point.
-\item[] The last two bytes of every message encode the \textbf{hash}, used for verifying message integrity. When decrypting messages, bits are mixed together according to a common algorithm, and the result is compared to the hash bytes carried by the message. Should they not match, the message is discarded as garbage.
+\item[] The last two bytes of every message encode the \textbf{hash}, used for verifying message integrity. When decrypting messages, bits are mixed together according to a common algorithm, and the result is compared to the hash bytes carried by the message. Should they not match, the message is discarded.
 \end{itemize}
+
+\textit{See Figure \ref{img:Message} for an example of a valid message.}\\
+
+\textbf{Note:} When the COM\_VERBOSE compile flag is defined message length, message codes, sender and recipient IDs are increased by 48 - the ASCII value for the character '0'. This is performed for ease-of-use: while smaller than 10, their values are human readable when the message is in ASCII form. 
+
+\begin{figure}[ht]
+   \centering
+   \includegraphics[width=0.75\textwidth]{img/Message.png}
+   \caption{Decomposition of an example message, created with the COM\_VERBOSE compile flag defined.}
+   \label{img:Message}
+\end{figure}
 
 \subsubsection{Header}
 
@@ -159,7 +170,7 @@ The header, com\_protocol.h contains enumerations for all the message codes, com
 
 \textit{Message Codes}\\
 
-Message codes are defined as an enumeration, and automatically assigned integer values. \textit{See Table \ref{tab:mcodes}}.
+Message codes are defined as an enumeration, and are automatically assigned integer values. \textit{See Table \ref{tab:mcodes}}.\\
 
 \begin{table}[ht]
 \begin{center}
@@ -274,32 +285,58 @@ Such a standard procedure can for example be explicited as follows:
 \item[] \textbf{A to B:} "end of protocol"
 \end{itemize}
 
-when all involved parties have received their intended messages, the protocol is considered as having completed successfully.
+when all involved parties have received their intended messages, the protocol is considered as having completed successfully.\\
 
 Alternate procedures describe the prescribed response when a message from the standard procedure is not delivered as intended.
 
 \subsubsection{In General}
 
-Some proprieties of the communication protocols created for this project are generally true.
+Some proprieties of the communication protocols created for this project are generally true.\\
 
-The last message of any protocol procedure is a sensitive one, as there is nothing in the procedure itself that allows the emitting party to be aware of whether the receiving party has successfully collected it ( if an extra confirmation is added for this purpose, this confirmation becomes the last message of the protocol, and the same issue applies once again. And so on. ). 
-It is therefore to be expected that one device, having not received the ultimate message of the protocol procedure, is still expecting it, while the other device, having sent it, considers the protocol procedure completed.
+The last message of any protocol procedure is a sensitive one, as there is nothing in the procedure itself that allows the emitting party to be aware of whether the receiving party has successfully collected it ( if an extra confirmation is added for this purpose, this confirmation becomes the last message of the protocol, and the same issue applies once again. And so on. ). \\
+
+It is therefore to be expected that one device, having not received the ultimate message of the protocol procedure, is still expecting/asking for it, while the other device, having sent it, considers the protocol procedure completed.
 In that case, or if for any other reason one device remains stuck in procedure while the other one does not - e.g. if one of the two is reset unexpectedly - it is necessary to implement general or specific protocol-aborting procedures.\\
 
-For example the use of a timeout allows such a stuck-device to exit the procedure by itself.
-Another solution, used to good effect in this project, is to allow devices to respond to these tell-tale "second-to-last messages" with the correct protocol terminating message, without themselves being in the same state.\\
-
-An illustration of this, for clarification purposes; take the example protocol illustrated previously:
+For example the use of a timeout allows such a stuck-device to exit the procedure by itself after a while. Illustrated:
 
 \begin{itemize}
 \item[] \textbf{A to B:} "start of protocol"
 \item[] \textbf{B to A:} "confirmation"
-\item[] \textbf{A to B:} "end of protocol"
+\item[] \textbf{A to B:} "end of protocol" \textbf{not delivered, A exits protocol.}
+\item[] \textbf{B waits...}
+\item[] \textbf{timeout: B exits protocol.}
 \end{itemize}
 
-\subsubsection{When Connecting}
+The stuck device can also periodically ask for the last message to be re-sent, as long as it has not received it. As a complement to this process, a timeout can be implemented to prevent infinite loops. Illustrated:
 
-The choreographer application needs to know which cubes are connected, and which aren't. This is in order to spare the user the necessity of manually adding and removing cubes, as well as the possible errors that come with it ( mislabeled cubes, non-existant cubes, ... ). Cublis, however, have no need to know wether they are connected or not - the app either sends them commands and information, or it does not.
+\begin{itemize}
+\item[] \textbf{A to B:} "start of protocol"
+\item[] \textbf{B to A:} "confirmation"
+\item[] \textbf{A to B:} "end of protocol" \textbf{not delivered, A exits protocol.}
+\item[] \textbf{B waits...}
+\item[] \textbf{B to A:} "confirmation"
+\item[] \textbf{B waits...}
+\item[] \textbf{B to A:} "confirmation"
+\item[] \textbf{B waits...}
+\item[] \textbf{timeout: B exits protocol.}
+\end{itemize}
+
+Otherwise, or in addition, devices having already exited the protocol can be programmed to respond to tell-tale "second-to-last messages" with the correct protocol terminating message, without themselves being in the same state. Illustrated:
+
+\begin{itemize}
+\item[] \textbf{A to B:} "start of protocol"
+\item[] \textbf{B to A:} "confirmation"
+\item[] \textbf{A to B:} "end of protocol" \textbf{not delivered, A exits protocol.}
+\item[] \textbf{B waits...}
+\item[] \textbf{B to A:} "confirmation"
+\item[] \textbf{X to B:} "end of protocol"  \textbf{B exits protocol.}
+\end{itemize}
+
+
+\subsubsection{Connecting Protocol}
+
+The choreographer application needs to know which cubes are connected, and which aren't. This is in order to spare the user the necessity of manually adding and removing cubes, as well as the potential errors that come with it ( mislabeled cubes, non-existant cubes, ... ). Cublis, however, have no need to know whether they are connected or not - the app either sends them commands and information, or it does not.
 
 As a result, the connection protocol is not symmetrical. 
 
@@ -315,12 +352,123 @@ As a result, the connection protocol is not symmetrical.
 at which point, the application changes the appropriate cubes status to "Unsynced"
 \item[Alternate procedures]:
 
+Cubli periodically repeats the first message until it receives confirmation, i.e. a "connect" message from the application. It tries approximately 10 times then aborts the procedure. \textit{"Approximately" in the previous sentence points to the fact that Cubli can try up to a 100 times, the exact amount of times depends of wether it receives in return an undecypherable message, or nothing at all.} Illustrated:
+
 \begin{itemize}
-\item If first message is not received
+\item[] \textbf{Cubli to PC:} "connect" \textbf{not delivered}
+\item[] \textbf{Cubli to PC:} "connect"
+\item[] \textbf{PC to Cubli:} "connect" \textbf{not delivered}
+\item[] \textbf{Cubli to PC:} "connect"
+\item[] \textbf{PC to Cubli:} "connect" 
+\item[] \textbf{Cubli to PC:} "received"
 \end{itemize}
+
+Should the ultimate message not be delivered, or should cubli give up, the procedure is incomplete from the application's point of view, and needs to be initiated again. No extra procedure was implemented to prevent this, as the occurrence is rare and re-initiating the procedure is not problematic.
+
+
+\item[Also]:
+
+The application can prompt cubes to initiate this protocol, by sending the "check" message to all cubes. Cubes which receive it send a "connect" message in return, first message in the procedure. In order to maximize the chances of all cubes initiating the procedure, the choreographer application sends 10 "Check" messages during a period of one second.
+
+
 \end{description}
-\subsubsection{When Syncing}
-\subsubsection{When ...}
+
+\subsubsection{Sync Protocol}
+
+The application performs the same procedure for each connected cubli, one after the other. It goes as follow:
+
+\begin{description}
+\item[Standard protocol procedure]:
+
+\begin{itemize}
+\item[] \textbf{PC to Cubli:} "begin transfer : 5 parts"
+\item[] \textbf{Cubli to PC:} "received"
+\item[] \textbf{PC to Cubli:} "part 1"
+\item[] \textbf{Cubli to PC:} "part 1 received"
+\item[] \textbf{PC to Cubli:} "part 2"
+\item[] \textbf{Cubli to PC:} "part 2 received"
+\item[] \textbf{idem. for parts 3 to N ...}
+\item[] \textbf{PC to Cubli:} "part N"
+\item[] \textbf{Cubli to PC:} "part N received"
+\item[] \textbf{PC to Cubli:} "finish transfer"
+\item[] \textbf{Cubli to PC:} "received"
+\end{itemize}
+
+\item[Alternate procedures]:
+
+The first message is resent by the application until confirmation of reception.
+
+From that point on, every 50ms during which cubli does not receive a part, it sends a "waiting" message. 
+Upon reception such one "waiting" message, otherwise periodically, the application re-sends the latest part or "finish transfer" message. It does so until a timeout is reached, at which point the application sends 10 "abort transfer" messages, and disconnects the cube if it has not mirrored any of the 10 "abort transfer" messages.
+
+The cube has no timeout, and should a cube for any reason remain stuck sending out "waiting" messages, the app is programmed to respond with "abort transfer" if is not, itself, in the sync state.
+
+\end{description}
+
+\subsubsection{Choreography Start Protocol}
+
+\begin{description}
+\item[Standard protocol procedure]:
+
+\begin{itemize}
+\item[] \textbf{PC to Cublis:} "start in: 10"
+\item[] \textbf{Cublis to PC:} "got count"
+\item[] \textbf{PC to Cublis:} "start in:  9"
+\item[] \textbf{Cublis to PC:} "got count"
+\item[] \textbf{PC to Cublis:} "start in:  8"
+\item[] \textbf{Cublis to PC:} "got count"
+\item[] \textbf{idem. from 7 to 2...}
+\item[] \textbf{PC to Cublis:} "start in:  1"
+\item[] \textbf{all devices start choreography}
+\end{itemize}
+
+Every cubli has 7 chances to receive and confirm the countdown. If the PC does not receive at least one confirmation from each cubli by the time the countdown reaches 3, it marks the offending cubli as disconnected, and begins the Abort Choreography protocol.
+
+\end{description}
+
+\subsubsection{Abort Choreography Protocol}
+
+\begin{description}
+\item[Standard protocol procedure]:
+
+\begin{itemize}
+\item[] \textbf{PC to Cublis:} "stop choreography"
+\item[] \textbf{Cublis to PC:} "stop choreography"
+\end{itemize}
+
+The PC repeats the message 10 times, or until it has received at least one confirmation from each cube. Should no confirmation be received from one cube, it is marked as disconnected.
+
+\end{description}
+
+\subsubsection{Choreography Failure Protocol}
+
+\begin{description}
+\item[Standard protocol procedure]:
+
+\begin{itemize}
+\item[] \textbf{Cubli A      to All:} "move failed"
+\item[] \textbf{PC       to Cubli A:} "acknowledged"
+\item[] \textbf{Other Cublis  to PC:} "other cubli failed"
+\item[] \textbf{PC  to Other Cublis:} "acknowledged"
+\item[] \textbf{all devices wait for recovery}
+\item[] \textbf{Cubli A       to PC:} "recovered"
+\item[] \textbf{PC       to Cubli A:} "acknowledged"
+\item[] \textbf{PC           to All:} "resume in 10"
+\item[] \textbf{All Cublis   to PC :} "resume in"
+\item[] \textbf{PC           to All:} "resume in  9"
+\item[] \textbf{All Cublis   to PC :} "resume in"
+\item[] \textbf{PC           to All:} "resume in  8"
+\item[] \textbf{All Cublis   to PC :} "resume in"
+\item[] \textbf{idem. from 7 to 2...}
+\item[] \textbf{PC           to All:} "resume in  1"
+\item[] \textbf{All Cublis   to PC :} "resume in"
+\item[] \textbf{all devices resume choreography}
+
+\end{itemize}
+
+[Alternatives]
+
+\end{description}
 
 \section{Cubli Development}
 
