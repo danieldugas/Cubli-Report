@@ -296,21 +296,23 @@ In addition, the OS also deals with interrupt routines and more specific functio
 \item Still in \textbf{Controllers.c}, the task management variables, \texttt{\_jumpMode, \_balance, \_balancingMode} determine whether controller tasks execute actions or wait idly. These tasks access IMU and sensor measurements, calculate the necessary control actions, and set target actuation values appropriately. Actuation tasks then attempt to realize those values and interact with the servo hardware.
 \end{itemize}
 
-See Figure \ref{img:Controllers} for an visual overview of this process.
+See Figure \ref{img:Controllers} for a visual overview of this process.
 
 \begin{figure}[ht]
    \centering
    \includegraphics[width=0.75\textwidth]{img/Controllers.png}
-   \caption{Block diagram of tasks in \texttt{Controllers.c}.}
+   \caption{Block diagram of tasks in the original \texttt{Controllers.c}.}
    \label{img:Controllers}
 \end{figure}
 
 
 \subsection{Task Alterations}
 
-The bulk of the additions to the Cubli code affected tasks, with the modification of several existing tasks, and creation of 2 new tasks for communication and choreography management.
+The bulk of the additions to the Cubli code affected tasks, with the modification of several existing tasks, and creation of 2 new tasks for communication and choreography management.\\
 
-This subsection describes the code modifications and additions to the relevant tasks performed in this project.
+This subsection describes the code modifications and additions to the relevant tasks performed in this project.\\
+
+See Figure \ref{img:ControllersChoreography} for an overview of the resulting task interactions.
 
 \subsubsection{ModeManagement Task}
 
@@ -353,11 +355,10 @@ Three functionalities had to be added in the controllers' code:
 \item notifying the choreography management task when primitives are successful
 \end{itemize}
 
-
 \begin{figure}[ht]
    \centering
-   \includegraphics[width=0.75\textwidth]{img/ChoreographerGUI.png}
-   \caption{The CUBLI Choreographer Graphical User Interface.}
+   \includegraphics[width=0.75\textwidth]{img/ControllersChoreography.png}
+   \caption{Block diagram of tasks in this projects updated \texttt{Controllers.c}.}
    \label{img:ControllersChoreography}
 \end{figure}
 
