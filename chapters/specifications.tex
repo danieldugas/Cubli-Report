@@ -2,6 +2,25 @@
 
 The initial task of the project was to define the project goals and specifications, and the basic structure of the development plan.\\ 
 
+Overall, the project aims to achieve a well-understood and demonstrable foundation for more independent Cublis, with the following aspects:
+
+\begin{itemize}
+
+\item[] Every original cubli capability should be available through the augmented interface.
+
+\item[] Optimally Cublis should communicate with each other as well as the computer, if that is not practical hierarchy can be imposed, with a leading cubli, or using the computer as the centralized node in communications.
+
+\item[] Choreographies are to be defined as several cublis performing a sequence of actions. These sequences can all be identical ( i.e. all cublis perform the same moves at the same time ), but it should also be possible to have each robot perform a different sequence.
+
+\item[] Autonomy of choreographies is considered a positive aspect. That is, necessity of human intervention during a choreography should be as low as possible. On the other hand,  unexpected human intervention ( e.g. someone pushing a cubli over ) should be reasonably handled.
+
+\end{itemize}
+
+
+
+
+\section{Project Modules}
+
 Thinking of the necessary components and the actions which would be required of them in order to generate the desired behavior, it was clear that at the minimum the project would require two separate programs, and thus at least two code bases. In addition, acting as a bridge within the two, and since it would likely be a quite significant endeavor in itself, the communication code was also separated conceptually and is discussed in the following as such.\\ 
 
  From this understanding, development is split into three main modules :
@@ -46,7 +65,7 @@ Pre-existing cubli source code had to be supplemented and modified to implement 
 
 
 
-\section{User Interface}
+\subsection{Choreographer Application Specifications}
 
 The goal is to create the choreographer application, an easy to launch and use executable.
 
@@ -101,21 +120,11 @@ In a similar vein, music or video creation/splicing softwares often deal with si
 \end{figure}
 
 
-\subsection{Sketches, other examples}
+\subsubsection{Sketches, other examples}
 
-\section{Cubli Behavior}
 
-The purpose of this project was to add new behavior to Cubli, without removing any. That is, one of the main goals was to preserve all existing functionality.
 
-As such, it is necessary to create a state for cubli in which it performs choreographies. This is distinct from another, "standard" state, in which cubli behaves as it previously did.
-
-The former, called "choreography" state, should be entered at the start of the performance and exited at the end.
-
-\subsection{Choreography State}
-
-In the choreography state, a cubli should keep track of the elapsed choreography time, and execute the action corresponding to the current time.
-
-\section{Communication}
+\subsection{Communications Specifications}
 
 It is straightforward that communication between cubli and choreographer is necessary in order to put choreographies into action. However, the exact implementation of these communications is not, itself, obvious.\\
 
@@ -151,7 +160,21 @@ It follows that the second method is preferable where the risk of simultaneous m
 Verification: Does this project require that the integrity of messages be verified? For any scenario where the rate of successful transmission can be expected to be lower than 100\%, ensuring that messages are emitted and received as intended is essential. In addition, though it requires extra effort during development, the necessary overhead to verify message contents during operation is low enough that it would be reasonable to implement it here even if a transfer rate close to 100\% was expected.
 
 
+\subsection{Cubli Specifications}
 
+The purpose of this project was to add new behavior to Cubli, without removing that which already exists. That is, one of the main goals was to preserve all original functionality.
+
+As such, it is necessary to create a state for cubli in which it performs choreographies. This is distinct from another, "standard" state, in which cubli behaves as it previously did.
+
+The former, called "choreography" state, should be entered at the start of the performance and exited at the end.
+
+In addition, it is expected that at least one new basic move will have to be implemented in order for cubli to be able to perform sequential moves without assistance: jumping back down from an edge to a face, and from a corner to a face.
+
+\subsubsection{Choreography State}
+
+In the choreography state, a cubli should keep track of the elapsed choreography time, and execute the action corresponding to the current time.\\
+
+Synchronized choreography movements between cublis is a desired feature, though not a necessary one. It is more important that the implementation of this synchronization does not get in the way of more essential features.\\
 
 \section{Failure Scenarios \& Responses}
 This section discusses the planning of failure estimation and handling.
@@ -169,15 +192,53 @@ Of the two factors taken into account above, the second, that is the disruptions
 
 For this reason, failures can at the start be incorrectly evaluated, their consequences or the responses misunderstood, or even simply not expected. As the project progresses, the actual importance of failures - through both factors - becomes gradually clearer.  This evolution leads to modification of the planned implementation in order to account for these corrections.
 
-\subsection{Choreography Failure Handling}
+\subsection{User Input Error Handling}
+
+A hard to predict mode of errors in a human-controlled environment are nonsensical inputs which can occur when the user makes a mistake, or the interface leads to misunderstanding - for example if it is not designed optimally.\\ 
+
+One aspect of an system is its tolerance to unrecognized/illrecognized inputs, and how strictly it attempts to prevent them from occuring, or corrects them. In this project: the aim was for the limits of possible interactions to be intuitively clear to the user. Contradiction to the user's commands must be avoided, and in the event of incoherent input, if a correction is to be made it should be the smallest correction leading to acceptable behavior. In addition it must be accompanied by a notification of this correction, communicated to the user in a non-intrusive way.\\
+
+This philosophy can be understood in practice. For example, in the implementation of choreography completion, which defines how the application adds "missing" moves when the user places together actions that can not rationally follow one another.
+
+
+
+\subsection{Communication Failure Handling}
+
+At the outset, the probability of occurence for such failures was expected to be low, yet not insignificant. As for the disruption caused by this event, it should vary based on the situation in which it occurs ( for example at a time-critical moment of the choreography, a failed transmission can have a much greater impact on the performance ), and the accumulation of communication errors.
+
+If several messages in a row fail to reach their recipients, the deviation from desired behavior can widen critically.\\
+
+The response to this issue must be proportionate to the risk they cause, and since very little is known at the start regarding actual message delivery rates, the various scenarios are all to be considered.\\
+
+If messages are rarely, if ever dropped, chances of several messages being dropped in a row become negligible. In such a scenario, communication protocols which perform a single check, or no check ( messages are assumed as delivered unless notified otherwise ), are sufficient in nearly all cases. Extra measures are not immediately necessary.\\
+
+When messages have a significant probability of being dropped, and the same applies to errors occuring several times in a row, the communication protocol must become increasingly complex to ensure that resulting behavior is still reasonable. Each message must be sent over and over until a confirmation is received, and it should also be expected that confirmations have to be sent several times in case they are also dropped. Timeout delays must be introduced, to ensure that every back-and-forth exchange has a chance to complete.\\
+
+As the probability of failure increases, it becomes increasingly likely that back-and-forth exchanges of information are unable to complete in reasonable time. Communications must also be reduced to a minimum, which can mean significant changes in the organisation of devices.\\
+
+The actual protocols which were developed for this project are detailed in the next chapter.
+
+\subsection{Cubli Failure Handling}
 
 Cubli's ability to learn and perform movements is impressive and works very well. It still happens that moves fail with varying likelihoods - especially difficult moves. This is the principal source of failure in a choreography.
 
 Thus, it is expected that this mode of failure has both a significant probability of occurence, and unarguable ability to disrupt the intended execution of a choreography.\\
 
-As such, the strategy for recovering from failed moves is important, and though in any case the perfect execution of the choreography is lost when such a failure happens, different recovery methods work to salvage different aspects of the remaining choreography execution.
+As such, the strategy for recovering from and reacting to failed moves is important, and though in any case the perfect execution of the choreography is lost when such a failure happens, different recovery methods work to salvage different aspects of the remaining choreography execution.
 
-A few examples of potential recovery methods and their consequences:\\
+\subsubsection{Affected Cubli Recovery}
+
+When possible, Cubli should recover by itself. This is generally the case when an attempt to jump to an edge, for exampleHowever, in Cubli's current development state, there are positions from which the possibility of performing moves is not programmed, and thus in which Cubli requires outside intervention.\\
+
+Regarding the above, ensuring Cubli's ability to move from any position is an interesting future development, also discussed in the \textit{Results \& Discussion} chapter.
+
+
+
+\subsubsection{Other Cublis}
+
+When one cubli fails, the choreography is generally considered as being in a Failure state. Several ways of handling this scenario are to be considered, the main factor being how all other cublis should behave when one fails.\\
+
+A few examples of potential choreography recovery methods and their consequences:\\
 
 \begin{description}
 \item[A.] Letting unaffected cubes continue their program, without waiting. The affected cube recovers as fast as possible, and then continues its program with a delay with respect to the others.
@@ -196,7 +257,18 @@ The particularities of this strategy are as follows:
 \item[+] If done correctly, the simultaneity of all timelines is preserved, and only the length of the global choreography is increased by a failure.
 \end{itemize}
 
-\item[C.] Starting over, or aborting a choreography if a failure occurs.
+\item[C.] Forgoing the failed move. Other cublis proceed unaffected, and the failed cube picks up the choreography at the next performable move.
+
+\begin{itemize}
+\item[-] It is not always possible to find a compatible move following the failed one, based on the current state of the affected cube.
+\item[-] As a result the failed cube's timeline can be significantly different from the original
+\item[+] No communication is necessary, and all other cubes continue unaffected
+\end{itemize}
+
+\textbf{Note:} This method in particular can lead to interesting ways of correcting failures, with solutions of varying complexity. For example, one could imagine algorithms responsible for re-shaping the remaining choreography in real-time, in order to [as quickly as possible/with the largest likelihood of success/as similarly to the intended plan/etc] have the cube get back into the groove.
+Though it certainly would be an interesting avenue of experimentation, since well-executed implementation of this method reduces the need for inter-device communication, it was not necessarily the most appropriate for this project.
+
+\item[D.] Starting over, or aborting a choreography if a failure occurs.
 
 \begin{itemize}
 \item[-] In the case that failures are somewhat frequent, choreographies will be repeated endlessly, or never reach their end.
@@ -207,27 +279,5 @@ The particularities of this strategy are as follows:
 
 It is thus up to the implementer to decide, based on which choreography aspects are the most important to conserve, the appropriate method. It should also be noted that each of those methods also presents several alternatives regarding implementation details, which also play a role in their resulting efficiency. These particulars are discussed in the following chapter, which delves into the details of implementation.
 
-\subsection{Communication Failure Handling}
 
-At the outset, the probability of occurence for such failures was expected to be low, yet not insignificant. As for the disruption caused by this event, it should vary based on the situation in which it occurs ( for example at a time-critical moment of the choreography, a failed transmission can have a much greater impact on the performance ), and the accumulation of communication errors.
-
-If several messages in a row fail to reach their recipients, the deviation from desired behavior can widen critically.\\
-
-The response to this issue must be proportionate to the risk they cause, and since very little is known at the start regarding actual message delivery rates, the various scenarios are all to be considered.\\
-
-If messages are rarely, if ever dropped, chances of several messages being dropped in a row become negligible. In such a scenario, communication protocols which perform a single check, or no check ( messages are assumed as delivered unless notified otherwise ), are sufficient in nearly all cases. Extra measures are not immediately necessary.\\
-
-When messages have a significant probability of being dropped, and the same applies to errors occuring several times in a row, the communication protocol must become increasingly complex to ensure that resulting behavior is still reasonable. Each message must be sent over and over until a confirmation is received, and it should also be expected that confirmations have to be sent several times in case they are also dropped. Timeout delays must be introduced, to ensure that every back-and-forth exchange has a chance to complete.\\
-
-As the probability of failure increases, it becomes increasingly likely that back-and-forth exchanges of information are unable to complete in reasonable time. Communications must also be reduced to a minimum, which can mean significant changes in the organisation of devices.\\
-
-The actual protocols which were developed for this project are detailed in the next chapter.
-
-\subsection{User Input Error Handling}
-
-A hard to predict mode of errors in a human-controlled environment are nonsensical inputs which can occur when the user makes a mistake, or the interface leads to misunderstanding - for example if it is not designed optimally.\\ 
-
-One aspect of an system is its tolerance to unrecognized/illrecognized inputs, and how strictly it attempts to prevent them from occuring, or corrects them. In this project: the aim was for the limits of possible interactions to be intuitively clear to the user. Contradiction to the user's commands must be avoided, and in the event of incoherent input, if a correction is to be made it should be the smallest correction leading to acceptable behavior. In addition it must be accompanied by a notification of this correction, communicated to the user in a non-intrusive way.\\
-
-This philosophy can be understood in practice. For example, in the implementation of choreography completion, which defines how the application adds "missing" moves when the user places together actions that can not rationally follow one another.
 
