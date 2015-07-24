@@ -282,15 +282,28 @@ In addition, the OS also deals with interrupt routines and more specific functio
 \subsubsection{From Button Press to Edge Balance}
 
 \begin{itemize}
-\item The ModeManagement task is repeated every few milliseconds. On every loop, it checks wether the ModeNumber was changed - or the ReRunModeManagement variable has been set . If either of those conditions are true, it updates the controller task management variables according to the current new ModeNumber.\\
+\item In \textbf{stm32f4xx\_it.c}, an interrupt is triggered when the mode button is pressed. Inside this interrupt, the \texttt{ \_modeNumber } variable is incremented once.
+
+\item In \textbf{Controllers.c}, the ModeManagement task is repeated every few milliseconds. On every loop, it checks whether the mode number has changed - and whether the ReRunModeManagement variable has been set. If either of those conditions are true, it measures what position Cubli is currently in, and updates the controller task management variables accordingly - based on the current new mode number.\\
 
 \textbf{Furthermore :} 
 \begin{itemize}
-\item[] Before updating those variables, it checks that the ModeNumber was not changed two consecutive times in short order - indicating an involuntary double button press .
-\item[] As the ModeNumber can also be changed from within a Controller task - at later stages of this process - the ModeManagement
+\item[] Before updating those variables, it checks that the mode number was not changed two consecutive times in short order - indicating an involuntary double button press.
+\item[] ReRunModeManagement is triggered inside ModeManagement, when cubli is set on its face. This is done order to re-update the controller task management variables - i.e. restart the current action. 
+\item[] Following this, ModeManagement waits 5 seconds before updating the controller task management variables, in order to prevent immediate and ill-controlled behavior.
 \end{itemize}
 
+\item Still in \textbf{Controllers.c}, the task management variables, \texttt{\_jumpMode, \_balance, \_balancingMode} determine whether controller tasks execute actions or wait idly. These tasks access IMU and sensor measurements, calculate the necessary control actions, and set target actuation values appropriately. Actuation tasks then attempt to realize those values and interact with the servo hardware.
 \end{itemize}
+
+See Figure \ref{img:Controllers} for an visual overview of this process.
+
+\begin{figure}[ht]
+   \centering
+   \includegraphics[width=0.75\textwidth]{img/Controllers.png}
+   \caption{Block diagram of tasks in \texttt{Controllers.c}.}
+   \label{img:Controllers}
+\end{figure}
 
 
 \subsection{Task Alterations}
