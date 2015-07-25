@@ -6,7 +6,7 @@
 
 Running tests to quantify the quality of communications between Cublis and Computer, we obtain the data in Figure \ref{img:comStats}. Specifically, these numbers where obtained through testing of the sync protocol.
 
-\begin{figure}[ht]
+\begin{figure}[H]
    \centering
    \includegraphics[width=1\textwidth]{img/comStats.png}
    \caption{A measure of the average communications success rate, with varying communication-update periods in cubli.}
@@ -41,13 +41,22 @@ Adding more cublis would arguably further degrade the performance, at which poin
 
 Because timeline syncing is sequential, that is, only one Cubli is synced at a time, the success rate is not heavily affected by the presence of multiple cubes - outside of the probabilistic combination of several events, i.e. the probability of two cublis syncing correctly is a square of the probability for one cubli.\\
 
-\textbf{The choreography initating sequence}, when tested, has completed successfully 20 times out of 20. Testing was conducted using two cubes. Through non-experimental use, failures of the protocol are sometimes, though rarely observed. Thus, the success rate of this protocol can conservatively be considered to lie between 90\% and 100\%. 
+\textbf{The choreography initating sequence}, when tested, has completed successfully 20 times out of 20. Testing was conducted using two cubes. Through non-experimental use, failures of the protocol are sometimes, though rarely observed. Thus, the success rate of this protocol can conservatively be considered to lie between 90\% and 100\%. \\
+
+\textbf{The choreography failure sequence} could not be rigorously tested. Due to the complex and time sensitive nature of the communications it contains, it is expected that its failure rate is similar to the choreography initiating sequence with only one cube, and increases as more cubes are involved. This concurs with what is regularly observed in practice.
 
 \section{Concept Validation}
 
-Although some aspects have evolved during development, the initial project vision has been realized with success. 
+At this point, the choreographer app is functional. Choreographies can be created and performed by Cublis - demonstrated with more or less reliability, depending on the amount of cublis and the communications success rate.\\
 
-Much has been learnt in the process,
+\begin{figure}[H]
+   \centering
+   \includegraphics[width=1\textwidth]{img/Performing.jpg}
+   \caption{Two Cublis jumping in sync during a choreography, at the IDSC lab.}
+   \label{img:performing}
+\end{figure}
+
+Much has been learnt in the process, and it is hoped that the efforts to augment Cubli continue after the completion of this project.
 
 \section{What's next}
 

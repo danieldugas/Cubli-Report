@@ -109,7 +109,11 @@ Any message sent to the cube from the app means a call to this class. It is also
 Which message must be sent is necessarily determined in this class' logic.
 It accomplishes this through a state machine, that has a corresponding response for every incoming message or application call.\\
 
-The protocols described in the next section are mostly encoded in here ( messages which are sent several times in a row originate from \texttt{mainwindow.cpp} code )
+The protocols described in the next section are mostly encoded in here ( messages which are sent several times in a row originate from \texttt{mainwindow.cpp} code )\\
+
+\textbf{Note:} a particularity of the communications implementation in the choreographer application is the way repeating messages is handled. In cubli, the communications state machine is called periodically regardless of whether information, or inputs, have occured. As such, in the cubli code, messages can be sent repeatedly simply by setting up the state machine to resend messages upon absence of a valid confirmation.
+
+In the choreographer however, the communications state machine in ComStateManager is only triggered when a message or button code is received. Thus, in order to repeat messages, routines are set up in the \texttt{MainWindow} class, containing loops with timeouts which call the ComStateManager periodically if needed. To illustrate, we take the case of the timeline sync procedure: when the "apply" button is pressed, a call to the MainWindow \texttt{updateAndSyncTimelines()} method is made, in which a loop updates the communications state machine with the button code \texttt{COM\_BCODE\_TRANSFER}. The state machine then determines what to send based on this button code and the state of the transfer. Incoming cubli messages independently trigger the state machine, and thus update the state of the transfer.
 
 \subsubsection{SettingsDialog}
 
@@ -155,7 +159,7 @@ This message structure is as follows:
 
 \textit{See Figure \ref{img:Message} for an example of a valid message.}\\
 
-\textbf{Note:} When the COM\_VERBOSE compile flag is defined message length, message codes, sender and recipient IDs are increased by 48 - the ASCII value for the character '0'. This is performed for ease-of-use: while smaller than 10, their values are human readable when the message is in ASCII form. \\
+\textbf{Note:} When the COM\_VERBOSE compile flag is defined message length, message codes, sender and recipient IDs are increased by 48 - the ASCII value for the character '0' ( stored in \texttt{COM\_CHAROFFSET} ). This is performed for ease-of-use: while smaller than 10, their values are human readable when the message is in ASCII form. \\
 
 \begin{figure}[ht]
    \centering
@@ -551,11 +555,28 @@ This subsection describes the code modifications and additions to the relevant t
 
 Originally a task responsible for updating the global variables responsible for deciding which controllers get activated based on the current mode ( which is originally incremented through the press of a respective hardware button ), this functionality is conserved and extended in this project.\\
 
-New modes are created for choreography, corresponding to the movement primitives, while the original modes are renamed to button modes, and relevant code sections are modified to make the new and original modes cohabitate. To this end, the original and old modes are distinguishable, allowing behavior which was only needed in old modes to be disabled for the new modes only.\\
+New modes are created for choreography, corresponding to the movement primitives, while the original modes are renamed to button modes. \textit{See Table \ref{tab:modenumbers} }. Relevant code sections are modified to make the new and original modes cohabitate. To this end, the original and old modes are distinguishable, allowing behavior which was only needed in old modes to be disabled for the new modes only.\\
 
-[Old modes and New Modes]\\
-
-[Pause upon resetting cubli on face?]\\
+\begin{table}[H]
+\begin{center}
+\caption{\texttt{\_modeNumber modes}}\vspace{1ex}
+\label{tab:modenumbers}
+\begin{tabular}{cc}\hline
+New Mode Numbers & Corresponding \\ 
+                 & Original      \\
+                 & Modes         \\ \hline 
+Idle        & (4) \\
+ButtonMode1 & 1 \\
+ButtonMode2 & 2 \\
+ButtonMode3 & 3 \\
+Get2E       & \\
+Get2C       & \\
+GetDown     & \\
+SingleSpin  & \\
+ \hline
+\end{tabular}
+\end{center}
+\end{table}
 
 \subsubsection{ComManagement Task}
 
@@ -590,15 +611,35 @@ Three functionalities had to be added in the controllers' code:
   \begin{minipage}[t]{0.48\textwidth}
     \includegraphics[width = \textwidth]{img/ControllersChoreography.png}
   \end{minipage}
-  \caption{Block diagrams of tasks in \texttt{Controllers.c}, illustrating the control flow for move executions. On the left, the block diagram for the original implementation, on the right this project's updated implementation.}
+  \caption{Block diagrams of tasks in \texttt{Controllers.c}, illustrating the control flow for move executions. On the left, the block diagram for the original implementation. on the right, this project's updated implementation.}
   \label{img:Controllers}
 \end{figure}
 
 \subsection{Other Alterations}
 
-UART routine
+\subsubsection{uart.c}
 
-Button-press event
+This file contains the UART interrupt handler as well as the methods for accessing the UART buffer. A new method, \texttt{uart\_quickread()}, was created to get the contents of this buffer in its current state, as the standard \texttt{uart\_read()} method hangs the process as long as the buffer is empty.
+
+\subsubsection{stm32f4xx\_it.c}
+
+The button press interrupt routine inside \texttt{stm32f4xx\_it.c} was modified, to ensure that pressing the button only cycles \texttt{\_modeNumber} from a button mode to another button mode. Thus instead of simply incrementing \texttt{\_modeNumber}, the interrupt now calls the function \texttt{cycleButtonMode()}:
+
+\lstset{language=C,numbers=none}
+\begin{lstlisting}[frame=lines]
+cube_mode cycleButtonMode( cube_mode buttonModeNumber)
+{
+	switch ( buttonModeNumber )
+	{
+	case Idle		 : return ButtonMode1;
+	case ButtonMode1 : return ButtonMode2;
+	case ButtonMode2 : return ButtonMode3;
+	case ButtonMode3 : return Idle       ;
+	default 		 : return buttonModeNumber;
+	}
+}
+\end{lstlisting}
+
 
 \subsubsection{timeline\_status.c}
 
@@ -608,9 +649,9 @@ A cube stores only one timeline, its current timeline, which it does not modify.
 
 The methods contained in \texttt{timeline\_status.c} are accessed from two tasks: the ComManagement task - to store the parts that it receives over UART, - and the ChoreographyManagement task - to fetch the part which corresponds to the current choreography time on the active timeline.\\
 
-Due to the expected use-cases of the choreographer application, it was deemed that an upper limit on parts per-timeline was sufficient, and allowed the timeline part number and timeline size to be stored in only one byte during sync - with a margin for extra information being stored in this byte. As a result, the maximum choreography length can not exceed about this amount times the shortest primitive - more accurately, the shortest possible timeline would contain a repetition of the shortest and second shortest primitives, thus has an average primitive length of 6 seconds. 
+Due to the expected use-cases of the choreographer application, it was deemed that an upper limit on parts per-timeline was sufficient, and allowed the timeline part number and timeline size to be stored in only one byte during sync - with a margin for extra information being stored in this byte ( e.g. \texttt{COM\_CHAROFFSET} ). As a result, the maximum choreography length can not exceed about this amount times the shortest primitive - more accurately, the shortest possible timeline would contain a repetition of the shortest and second shortest primitives, thus has an average primitive length of 6 seconds. 
 
-This results in a maximum timeline length of 18 minutes. 
+This results in a maximum timeline length of 12 minutes. 
 
 If need be, this limit can be increased, though the message contents during sync would have to be expanded.
     
