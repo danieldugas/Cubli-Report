@@ -145,7 +145,7 @@ It is here that the structure of a message is defined, and this code applies to 
 This message structure is as follows:
 \begin{itemize}
 \item[] Messages begin with a \textbf{start-byte}. This allows the code to more efficiently decrypt messages among garbage bytes in a buffer.
-\item[] The \textbf{message length} is encoded in the next byte, so as to allow the decryptor to know where the message ends.
+\item[] The \textbf{message length} is encoded in the next byte, so as to allow the decryptor to know where the message ends. This length is defined as the amount of character in the message code, extra content, and verbose sections of the message - i.e. it excludes the first metadata bytes and hash bytes.
 \item[] The next two bytes are, respectively, the \textbf{sender ID} and \textbf{recipient ID}.
 \item[] Then comes the \textbf{message code}, first part of a message's actual content.
 \item[] Second part of the message's content, are three potential \textbf{extra-content} bytes.
@@ -155,7 +155,7 @@ This message structure is as follows:
 
 \textit{See Figure \ref{img:Message} for an example of a valid message.}\\
 
-\textbf{Note:} When the COM\_VERBOSE compile flag is defined message length, message codes, sender and recipient IDs are increased by 48 - the ASCII value for the character '0'. This is performed for ease-of-use: while smaller than 10, their values are human readable when the message is in ASCII form. 
+\textbf{Note:} When the COM\_VERBOSE compile flag is defined message length, message codes, sender and recipient IDs are increased by 48 - the ASCII value for the character '0'. This is performed for ease-of-use: while smaller than 10, their values are human readable when the message is in ASCII form. \\
 
 \begin{figure}[ht]
    \centering
@@ -163,6 +163,10 @@ This message structure is as follows:
    \caption{Decomposition of an example message, created with the COM\_VERBOSE compile flag defined.}
    \label{img:Message}
 \end{figure}
+
+\textit{Hash Algorithm}\\
+
+The hashing algorithm used was developped by Daniel J. Bernstein, and has been empirically, rather than theoretically validated. A hash-size of 2 bytes was deemed appropriate for the expected message length, leading to low collisions ( See \cite{hashing} ) relative to the amount of space used in each message. For comparisons between various algorithms, refer to \url{http://en.literateprograms.org/Hash_function_comparison_(C,_sh)}
 
 \subsubsection{Header}
 
@@ -340,8 +344,8 @@ The choreographer application needs to know which cubes are connected, and which
 
 As a result, the connection protocol is not symmetrical. 
 
-\begin{description}
-\item[Standard protocol procedure]:
+\begin{itemize}
+\item[] \textbf{Standard protocol procedure:}
 
 \begin{itemize}
 \item[] \textbf{Cubli to PC:} "connect"
@@ -349,8 +353,9 @@ As a result, the connection protocol is not symmetrical.
 \item[] \textbf{Cubli to PC:} "received"
 \end{itemize}
 
-at which point, the application changes the appropriate cubes status to "Unsynced"
-\item[Alternate procedures]:
+at which point, the application changes the appropriate cubes status to "Unsynced"\\
+
+\item[] \textbf{Alternate procedures:}
 
 Cubli periodically repeats the first message until it receives confirmation, i.e. a "connect" message from the application. It tries approximately 10 times then aborts the procedure. \textit{"Approximately" in the previous sentence points to the fact that Cubli can try up to a 100 times, the exact amount of times depends of wether it receives in return an undecypherable message, or nothing at all.} Illustrated:
 
@@ -366,19 +371,19 @@ Cubli periodically repeats the first message until it receives confirmation, i.e
 Should the ultimate message not be delivered, or should cubli give up, the procedure is incomplete from the application's point of view, and needs to be initiated again. No extra procedure was implemented to prevent this, as the occurrence is rare and re-initiating the procedure is not problematic.
 
 
-\item[Also]:
+\item[] \textbf{Also:}
 
 The application can prompt cubes to initiate this protocol, by sending the "check" message to all cubes. Cubes which receive it send a "connect" message in return, first message in the procedure. In order to maximize the chances of all cubes initiating the procedure, the choreographer application sends 10 "Check" messages during a period of one second.
 
 
-\end{description}
+\end{itemize}
 
 \subsubsection{Sync Protocol}
 
 The application performs the same procedure for each connected cubli, one after the other. It goes as follow:
 
-\begin{description}
-\item[Standard protocol procedure]:
+\begin{itemize}
+\item[] \textbf{Standard protocol procedure:}
 
 \begin{itemize}
 \item[] \textbf{PC to Cubli:} "begin transfer : 5 parts"
@@ -394,7 +399,7 @@ The application performs the same procedure for each connected cubli, one after 
 \item[] \textbf{Cubli to PC:} "received"
 \end{itemize}
 
-\item[Alternate procedures]:
+\item[] \textbf{Alternate procedures:}
 
 The first message is resent by the application until confirmation of reception.
 
@@ -403,12 +408,12 @@ Upon reception such one "waiting" message, otherwise periodically, the applicati
 
 The cube has no timeout, and should a cube for any reason remain stuck sending out "waiting" messages, the app is programmed to respond with "abort transfer" if is not, itself, in the sync state.
 
-\end{description}
+\end{itemize}
 
 \subsubsection{Choreography Start Protocol}
 
-\begin{description}
-\item[Standard protocol procedure]:
+\begin{itemize}
+\item[] \textbf{Standard protocol procedure:}
 
 \begin{itemize}
 \item[] \textbf{PC to Cublis:} "start in: 10"
@@ -422,35 +427,39 @@ The cube has no timeout, and should a cube for any reason remain stuck sending o
 \item[] \textbf{all devices start choreography}
 \end{itemize}
 
+\item[] \textbf{Alternate procedures:}
+
 Every cubli has 7 chances to receive and confirm the countdown. If the PC does not receive at least one confirmation from each cubli by the time the countdown reaches 3, it marks the offending cubli as disconnected, and begins the Abort Choreography protocol.
 
-\end{description}
+\end{itemize}
 
 \subsubsection{Abort Choreography Protocol}
 
-\begin{description}
-\item[Standard protocol procedure]:
+\begin{itemize}
+\item[] \textbf{Standard protocol procedure:}
 
 \begin{itemize}
 \item[] \textbf{PC to Cublis:} "stop choreography"
 \item[] \textbf{Cublis to PC:} "stop choreography"
 \end{itemize}
 
+\item[] \textbf{Alternate procedures:}
+
 The PC repeats the message 10 times, or until it has received at least one confirmation from each cube. Should no confirmation be received from one cube, it is marked as disconnected.
 
-\end{description}
+\end{itemize}
 
 \subsubsection{Choreography Failure Protocol}
 
-\begin{description}
-\item[Standard protocol procedure]:
+\begin{itemize}
+\item[] \textbf{Standard protocol procedure:}
 
 \begin{itemize}
 \item[] \textbf{Cubli A      to All:} "move failed"
 \item[] \textbf{PC       to Cubli A:} "acknowledged"
 \item[] \textbf{Other Cublis  to PC:} "other cubli failed"
 \item[] \textbf{PC  to Other Cublis:} "acknowledged"
-\item[] \textbf{all devices wait for recovery}
+\item[] \textbf{PC waits for all failed devices to have recovered}
 \item[] \textbf{Cubli A       to PC:} "recovered"
 \item[] \textbf{PC       to Cubli A:} "acknowledged"
 \item[] \textbf{PC           to All:} "resume in 10"
@@ -463,12 +472,34 @@ The PC repeats the message 10 times, or until it has received at least one confi
 \item[] \textbf{PC           to All:} "resume in  1"
 \item[] \textbf{All Cublis   to PC :} "resume in"
 \item[] \textbf{all devices resume choreography}
-
 \end{itemize}
 
-[Alternatives]
+\item[] \textbf{Alternate procedures:}
 
-\end{description}
+Cublis notify the PC of move failed periodically until it receives an acknowledgement. At the other end, acknowledgement messages are only sent once. Illustrated:
+
+\begin{itemize}
+\item[] \textbf{Cubli A      to All:} "move failed" \textbf{not delivered}
+\item[] \textbf{Cubli A      to All:} "move failed"
+\item[] \textbf{PC       to Cubli A:} "acknowledged" \textbf{not delivered}
+\item[] \textbf{Cubli A      to All:} "move failed"
+\item[] \textbf{PC       to Cubli A:} "acknowledged"
+\end {itemize}
+
+The same confirmation procedure from the computer holds for "Other cubli failed" accusation messages, which are sent when a non-failed cubli receives news that one cubli has failed.\\
+
+\textbf{Note:} In order to guarantee the immediate pause of all cublis in case of failure, during choreography, reception of any undecypherable data is treated by cubes as a "move failed" message.
+
+Of course, this has the potential to create false-positives, which is why as a general rule, all devices stay silent during choreographies when all is proceeding as desired.\\
+
+Thus when a failure occurs, every cube will either be in a failure, or accusation mode, and the computer will be aware of each cube's status. It can thus keep track of recoveries, and which cubes need to be recovered before the choreography can be re-initiated.\\
+
+The choreography resume protocol is similar to the start protocol, in that the countdown guarantees simultaneous resuming of all performances. Cublis have a chance to confirm their awareness of the impending resume until the last message, at which point if at least one cubli has not done so, the resume protocol is reinitiated by the computer. This procedure repeats until the user decides to stop the choreography.
+
+
+
+
+\end{itemize}
 
 \section{Cubli Development}
 
@@ -505,14 +536,7 @@ In addition, the OS also deals with interrupt routines and more specific functio
 \item Still in \textbf{Controllers.c}, the task management variables, \texttt{\_jumpMode, \_balance, \_balancingMode} determine whether controller tasks execute actions or wait idly. These tasks access IMU and sensor measurements, calculate the necessary control actions, and set target actuation values appropriately. Actuation tasks then attempt to realize those values and interact with the servo hardware.
 \end{itemize}
 
-See Figure \ref{img:Controllers} for a visual overview of this process.
-
-\begin{figure}[ht]
-   \centering
-   \includegraphics[width=0.75\textwidth]{img/Controllers.png}
-   \caption{Block diagram of tasks in the original \texttt{Controllers.c}, illustrating the control flow for move executions.}
-   \label{img:Controllers}
-\end{figure}
+\textit{See Figure \ref{img:Controllers}, left diagram, for a visual overview of this process.}
 
 
 \subsection{Task Alterations}
@@ -521,7 +545,7 @@ The bulk of the additions to the Cubli code affected tasks, with the modificatio
 
 This subsection describes the code modifications and additions to the relevant tasks performed in this project.\\
 
-See Figure \ref{img:ControllersChoreography} for an overview of the resulting task interactions.
+\textit{See Figure \ref{img:Controllers}, right diagram, for an overview of the resulting task interactions.}
 
 \subsubsection{ModeManagement Task}
 
@@ -545,13 +569,7 @@ As for the communication state machine, it implements the protocols which are de
 
 The choreography management task is only active during choreography, in which case it keeps track of the current primitive and run time, and adjusts the mode accordingly. It also implements behavior for pausing the choreography and notifying other cubes through the communication management when a move fails.
 
-\subsubsection{TimelineStatus Task}
 
-This code is responsible for storing the timeline information.\\
-
-A cube stores only one timeline, its current timeline, which it does not modify. Alongside it, is a 'cache', a temporary timeline which is filled during sync, and then copied to the current timeline if the sync was successful, or discarded if unsuccessful.\\
-
-[Limits of timeline storage, etc]
 
 \subsubsection{Controller Tasks}
 
@@ -565,10 +583,15 @@ Three functionalities had to be added in the controllers' code:
 \end{itemize}
 
 \begin{figure}[ht]
-   \centering
-   \includegraphics[width=0.75\textwidth]{img/ControllersChoreography.png}
-   \caption{Block diagram of tasks in this projects' updated \texttt{Controllers.c}, illustrating the control flow for move executions.}
-   \label{img:ControllersChoreography}
+  \begin{minipage}[t]{0.48\textwidth}
+    \includegraphics[width = \textwidth]{img/Controllers.png}
+  \end{minipage}
+  \hfill
+  \begin{minipage}[t]{0.48\textwidth}
+    \includegraphics[width = \textwidth]{img/ControllersChoreography.png}
+  \end{minipage}
+  \caption{Block diagrams of tasks in \texttt{Controllers.c}, illustrating the control flow for move executions. On the left, the block diagram for the original implementation, on the right this project's updated implementation.}
+  \label{img:Controllers}
 \end{figure}
 
 \subsection{Other Alterations}
@@ -577,7 +600,19 @@ UART routine
 
 Button-press event
 
+\subsubsection{timeline\_status.c}
 
+This file and its header, created for this project, contain the code responsible for storing the timeline information.\\
+
+A cube stores only one timeline, its current timeline, which it does not modify. Alongside it, is a 'cache', a temporary timeline which is filled during sync, and then copied to the current timeline if the sync was successful, or discarded if unsuccessful.\\
+
+The methods contained in \texttt{timeline\_status.c} are accessed from two tasks: the ComManagement task - to store the parts that it receives over UART, - and the ChoreographyManagement task - to fetch the part which corresponds to the current choreography time on the active timeline.\\
+
+Due to the expected use-cases of the choreographer application, it was deemed that an upper limit on parts per-timeline was sufficient, and allowed the timeline part number and timeline size to be stored in only one byte during sync - with a margin for extra information being stored in this byte. As a result, the maximum choreography length can not exceed about this amount times the shortest primitive - more accurately, the shortest possible timeline would contain a repetition of the shortest and second shortest primitives, thus has an average primitive length of 6 seconds. 
+
+This results in a maximum timeline length of 18 minutes. 
+
+If need be, this limit can be increased, though the message contents during sync would have to be expanded.
     
 
 
