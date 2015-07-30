@@ -15,13 +15,11 @@ Running tests to quantify the quality of communications between Cublis and Compu
 
 As such we observe that on average, there is a 30\% chance of Cubli collecting a message. This further means that if we are to send Cubli the same message 5 times, the probability of at least one message being successfully received is 85\% and for 10 identical messages, the same probability becomes 97\% .\\
 
-In addition, tests were ran at 50 ms ComManagementT Delay, replacing the wireless adapter with a direct wired connection to the PC, and over a large amount of messages the resulting success rate for reception in Cubli increased to 50\%. It is therefore hypothesized that the remaining 50\% of losses originate from inside the software, particularly the way that UART reception is handled.\\
+In addition, measurements were ran at 50 ms ComManagementT sampling time, replacing the wireless adapter with a direct wired connection to the PC. Over a large amount of messages, the resulting success rate for reception in Cubli increased to 50\%. It is therefore hypothesized that the remaining 50\% of losses originate from inside the software, particularly the way that UART reception is handled.\\
 
 Running similar test during other protocols yields similar results, with Cubli's reception rate rarely exceeding 40\%.\\
 
-A rare but several times observed occurrence was a crash of the Cubli software, the cause of which was not identified when debugging. Likelihood of this event increase with the communications volume and frequency, although it remains generally low and hard to predict.\\
-
-Finally, through all the tests , and the whole project, messages from two Cublis were never observed to have mixed with one another. As the probability of such an occurrence was expected to be low, this is not such a surprise. However it shows that the order of magnitude of that likelihood is even smaller than expected - certainly due to the short time of UART emission at the Baud rate of 115200 bits per second. \textit{ Thought experiment: At a 100 bits per message, in theory such a baud rate implies that it takes 0.8 ms to send a message. Knowing that Cubli sends a message at most once every 50 ms with the current settings, the chance of two Cublis accidentally sending a message at the same time can be (very) approximately calculated as $\frac{0.8}{50}$, that is 1.6\% }.
+Finally, through all the tests , and the whole project, messages from two Cublis were never observed to have mixed with one another. As the probability of such an occurrence was expected to be low, this is not such a surprise. However it shows that the order of magnitude of that likelihood is even smaller than expected - certainly due to the short time of UART emission at the Baud rate of 115200 bits per second. \textit{ Thought experiment: For 100-bit messages such a baud rate implies that it takes 0.8 ms to send a message. Knowing that Cubli sends a message at most once every 50 ms with the current settings, the chance of two Cublis accidentally sending a message at the same time can be (very) approximately calculated as $\frac{0.8}{50}$, that is 1.6\% }.\\
 
 \textbf{Addendum:} the code responsible for low reception rates in Cublis having been found, new communications performance for the Cubli are similar to that of the computer (that is, around 90\%). Since the low reception rates were relevant during the development phase, they remain mentioned in this report.
 
@@ -29,13 +27,13 @@ Finally, through all the tests , and the whole project, messages from two Cublis
 
 Knowing the rate at which single messages are statistically dropped, it is interesting to quantify the success of communication protocols in ensuring complete and timely transfer of data between devices. \\
 
-\textbf{The connecting protocol} was tested by pressing the '+' button, with two powered-on Cublis. Out of 100 attempts, 86 completed successfully, that is with all cubes marked as connected. A second trial was made, wherein 88 out of 100 attempts completed successfully.
+\textbf{The connecting protocol} was tested by pressing the '+' button, with two powered-on Cublis. Out of 100 attempts, 86 completed successfully, that is, with all cubes marked as connected. A second trial was made, wherein 88 out of 100 attempts completed successfully.
 
 With only one Cubli powered-on, the same test yielded a result of 99 out of 100 attempts successful.\\
 
 Thus on average, the statistical success rate of the protocol with one Cubli is approximately 99\%, whereas with two Cublis it drops to 87\%. \\
 
-This drop in performance was expected, and the likely cause is shadowing of a Cubli's messages by another. As explained previously, when two messages reach the application in quick succession, only the first one is treated - in order to stop the application from lagging behind - which leads to the observed behavior. \\
+This drop in performance was expected, and the likely cause is shadowing of a Cubli's messages by another. As explained previously, when two messages reach the application in quick succession, only the first one is treated - in order to stop the application from lagging behind - which leads to the observed behavior (\textit{see Subsection \ref{sec:receptionanddecryption}}). \\
 
 Adding more Cublis would arguably further degrade the performance, at which point it should become reasonable to implement time-slots during which only one Cubli is allowed to communicate. \textit{ For future endeavors, } this would be an interesting avenue of experimentation - however, it would require an accurate timekeeping mechanism, which is not yet available in the Cubli software. Another possibility which was considered, is to have the application only prompt one Cubli at a time, and whenever possible have Cublis only speak when prompted. This solution is however less general ( for example it does not apply for scenarios where Cublis must notify the application of failures, or similar cases. ), and would not be appropriate as a standard solution if future projects delve into making Cublis interact with each other independently from a computer, and symmetrically. Note however that the sync protocol developed in this project, for example, follows that principle ( only one Cubli talking at once ). \\
 
@@ -45,7 +43,7 @@ Because timeline syncing is sequential, that is, only one Cubli is synced at a t
 
 \textbf{The choreography initating sequence}, when tested, has completed successfully 20 times out of 20. Testing was conducted using two cubes. Through non-experimental use, failures of the protocol are sometimes, though rarely observed. Thus, the success rate of this protocol can conservatively be considered to lie between 90\% and 100\%. \\
 
-\textbf{The choreography failure sequence} could not be rigorously tested. Due to the complex and time sensitive nature of the communications it contains, it is expected that its failure rate is similar to the choreography initiating sequence with only one cube, and increases as more cubes are involved. This concurs with what is regularly observed in practice.
+\textbf{The choreography failure sequence} could not be rigorously tested. Due to its complex and time sensitive nature, it is expected that its failure rate is similar to the choreography initiating sequence with only one cube, and increases as more cubes are involved. This concurs with what is regularly observed in practice.
 
 \section{Concept Validation}
 

@@ -33,34 +33,34 @@ Just as the final application has two main panels in debugging mode - one concer
 
 \subsection{App Components}
 
-Here we clarify the contents of various parts of the choreographer app source, as available in the Github repository. For each part, a general explanation is given, and is followed by more technical details, if relevant.
+Here we clarify the contents of various parts of the choreographer application source, as available in the Github repository. For each part, a general explanation is given, and is followed by more technical details, if relevant.
 
 \subsubsection{Main Window}
 
-First and foremost, this class displays and sets up the main viewport. It defines the action for all the buttons, and provides functions for updating text fields such as the app information.
+First and foremost, this class displays and sets up the main viewport. It defines the action for all the buttons, and provides functions for updating text fields such as the application information.
 
-As such it is mostly QT-specific code, with several functions handling the app behavior when connecting or syncing with cubes.
+As such it is mostly QT-specific code, with several functions handling the application behavior when connecting or syncing with cubes.
 
 \subsubsection{Serial Manager}
 
-Serial port communication was the first implemented functionality of the app, relatively easy to write thanks to the already well-built QT serial port libraries. In detail, successful sending entails: 
+Serial port communication was the first implemented functionality of the application, relatively easy to write thanks to the already well-built QT serial port libraries. In detail, successful sending entails: 
 
 \begin{itemize}
-\item setting the port name ( Later, a panel for setting those options easily, which among other things contains a drop down list enumerating the available port names was added ) 
-\item setting the serial parameters, such as baud rate, hardware flow control and so on to the same values as inside Cubli ( Baud rate of 115200, ) 
+\item setting the port name (Later, a panel for setting those options was added, which among other things, contains a drop down list enumerating the available port names).
+\item setting the serial parameters, such as the baud rate, the hardware flow control, etc. to the same values as on the Cubli hardware (Baud rate of 115200).
 \item open the port. This is straightforward through a simple function call 
 \item send bytes through the port. A function call is all that is needed here as well. 
 \end{itemize}
 
 Receiving is handled in an interrupt, which hands over control to a function written for that purpose.\\
 
-Among other things this function displays all the received bytes in a serial stream display panel. In addition, any bytes sent by the Application over serial are also displayed in the same serial stream display panel with a line prefix of '>>' \\
+Among other things, this function displays all the received bytes in a serial stream display panel. In addition, any bytes sent by the Application over serial are also displayed in the same serial stream display panel with a line prefix of '>>'. \\
 
 The class named Serial Manager was created in order to handle those actions. 
 
 \subsubsection{Timeline}
 
-Created and displayed when each cube connects to the application, a white rectangular canvas on which the user can place, modify or remove color coded squares is meant to represent the chorography - the horizontal axis representing time, - and, as such, is called a Timeline. Each square, called a Primitive, represents a specific action of Cubli, and thus, one or several Timelines, each containing a sequence of primitives, together represent a choreography. \\
+Created and displayed when each cube connects to the application, a white rectangular canvas on which the user can place, modify or remove color coded squares is meant to represent the choreography - the horizontal axis representing time, - and, as such, is called a Timeline. Each square, called a Primitive, represents a specific action of Cubli, and thus, one or several Timelines, each containing a sequence of Primitives, represent a choreography. \\
 
 \begin{figure}[ht]
    \centering
@@ -102,18 +102,18 @@ This class provides methods for easily accessing certain properties, modifying, 
 
 \subsubsection{ComStateManager}
 
- The ComStateManager class is the part of the application which handles communication responses, i.e. \textit{what to send and when}.\\
+ The ComStateManager class is the part of the application which handles communication responses, i.e. what to send and when.\\
  
-Any message sent to the cube from the app means a call to this class. It is also where cube statuses are stored, which allow it and other parts of the application to take into account whether particular cubes are connected or not, syncing or not, and so on.\\
+Any message sent to the cube from the application means a call to this class. It is also where cube statuses are stored, which allow it and other parts of the application to take into account whether particular cubes are connected or not, syncing or not, and so on.\\
 
 Which message must be sent is necessarily determined in this class' logic.
 It accomplishes this through a state machine, that has a corresponding response for every incoming message or application call.\\
 
 The protocols described in the next section are mostly encoded in here ( messages which are sent several times in a row originate from \texttt{mainwindow.cpp} code )\\
 
-\textbf{Note:} a particularity of the communications implementation in the choreographer application is the way repeating messages is handled. In Cubli, the communications state machine is called periodically regardless of whether information, or inputs, have occured. As such, in the Cubli code, messages can be sent repeatedly simply by setting up the state machine to resend messages upon absence of a valid confirmation.
+\textbf{Note:} a particularity of the communication implementation in the choreographer application is the way repeating messages is handled. On the Cubli, the communication state machine is called periodically regardless of whether information, or inputs, have occured. As such, in the Cubli code, messages can be sent repeatedly simply by setting up the state machine to resend messages upon absence of a valid confirmation.
 
-In the choreographer however, the communications state machine in ComStateManager is only triggered when a message or button code is received. Thus, in order to repeat messages, routines are set up in the \texttt{MainWindow} class, containing loops with timeouts which call the ComStateManager periodically if needed. To illustrate, we take the case of the timeline sync procedure: when the "apply" button is pressed, a call to the MainWindow \texttt{updateAndSyncTimelines()} method is made, in which a loop updates the communications state machine with the button code \texttt{COM\_BCODE\_TRANSFER}. The state machine then determines what to send based on this button code and the state of the transfer. Incoming Cubli messages independently trigger the state machine, and thus update the state of the transfer.
+In the choreographer however, the communication state machine in ComStateManager is only triggered when a message or button code is received. Thus, in order to repeat messages, routines are set up in the \texttt{MainWindow} class, containing loops with timeouts which call the ComStateManager periodically if needed. To illustrate, we take the case of the timeline sync procedure: when the "apply" button is pressed, a call to the MainWindow \texttt{updateAndSyncTimelines()} method is made, in which a loop updates the communication state machine with the button code \texttt{COM\_BCODE\_TRANSFER}. The state machine then determines what to send based on this button code and the state of the transfer. Incoming Cubli messages independently trigger the state machine, and thus update the state of the transfer.
 
 \subsubsection{SettingsDialog}
 
@@ -121,7 +121,7 @@ SettingsDialog is responsible for putting together the settings dialog which app
 
 \subsubsection{Main.cpp}
 
-Main runs the mainwindow code, launching the app, and any necessary QT routines.
+Main runs the mainwindow code, launching the application, and any necessary QT routines.
 
 \section{Communications}
 
@@ -129,7 +129,7 @@ The source for the message protocol fits inside one cpp file and accompanying he
 
 Of course, the concept of communication protocol as a whole pertains to more than uniquely this message-transmission code. It also englobes the determination of how the machines ought to behave when contacting each other, which in practice is encoded all over their code ( see communication state machines, MainWindow, etc ). However for the sake of consistency the particulars of these protocols are discussed here.\\
 
-One of the difficulties during this project was the unreliability of the UART behavior in the Cubli microcontroller ( \textit{See Figure \ref{img:USART}} ). Thankfully the communication protocol was designed to be quite robust from the get-go, which seemed at the time like a potentially unnecessary amount of safety, though it proved essential.
+One of the difficulties during this project was the unreliability of the UART behavior in the Cubli microcontroller (\textit{See Figure \ref{img:USART}}). Thankfully the communication protocol was designed to be quite robust from the get-go, which seemed at the time like a potentially unnecessary amount of safety, though it proved essential.
 
 \begin{figure}[ht]
    \centering
@@ -146,7 +146,7 @@ Principally, this code transforms a message's code, additional content, and meta
 
 It is here that the structure of a message is defined, and this code applies to both Cublis and the choreography application.\\
 
-This message structure is as follows:
+The message structure is as follows:
 \begin{itemize}
 \item[] Messages begin with a \textbf{start-byte}. This allows the code to more efficiently decrypt messages among garbage bytes in a buffer.
 \item[] The \textbf{message length} is encoded in the next byte, so as to allow the decryptor to know where the message ends. This length is defined as the amount of character in the message code, extra content, and verbose sections of the message - i.e. it excludes the first metadata bytes and hash bytes.
@@ -170,11 +170,11 @@ This message structure is as follows:
 
 \textit{Hash Algorithm}\\
 
-The hashing algorithm used was developped by Daniel J. Bernstein, and has been empirically, rather than theoretically validated. A hash-size of 2 bytes was deemed appropriate for the expected message length, leading to low collisions ( See \cite{hashing} ) relative to the amount of space used in each message. For comparisons between various algorithms, refer to \url{http://en.literateprograms.org/Hash_function_comparison_(C,_sh)}
+The hashing algorithm used was developped by Daniel J. Bernstein, and has been validated empirically, rather than theoretically. A hash-size of 2 bytes was deemed appropriate for the expected message length, leading to low collisions (see \cite{hashing}) relative to the amount of space used in each message. For comparisons between various algorithms, refer to \url{http://en.literateprograms.org/Hash_function_comparison_(C,_sh)}.
 
 \subsubsection{Header}
 
-The header, com\_protocol.h contains enumerations for all the message codes, communications states, and a few other which are shared between Cubli and computer, as well as some macro expansions which concern communication settings.\\
+The header, com\_protocol.h contains enumerations for all the message codes, communication states, and a few other which are shared between Cubli and computer, as well as some macro expansions which concern communication settings.\\
 
 \textit{Message Codes}\\
 
@@ -226,7 +226,7 @@ COM\_N\_MESSAGE\_CODES          & [Not a valid code]  \\
 \end{center}
 \end{table}
 
-BCODEs, short for Button Codes, are message codes which are internal to the choreographer application. They are used to convey button inputs or events to the communications state machine, and are not meant to be transmitted over UART.\\
+BCODEs, short for Button Codes, are message codes which are internal to the choreographer application. They are used to convey button inputs or events to the communication state machine, and are not meant to be transmitted over UART.\\
 
 
 \textit{Compile flags}\\
@@ -244,7 +244,7 @@ The header also contains two compile flags:\\
     
 \end{itemize}
 
-\subsection{Information Reception \& Decryption}
+\subsection{Information Reception \& Decryption}\label{sec:receptionanddecryption}
 
 The way Cublis and the choreographer application handle UART information is similar, although there are specific details that differ.\\
 
@@ -256,15 +256,15 @@ The step-by-step process of reception and decryption in both device types is as 
 \begin{description}
 \item[In Cubli,] the buffer in question is a ring buffer named \textit{rx\_buf}. The interrupt routine \textit{USART1\_IRQHandler()} checks whether a byte has been stored in the UART register. If it has, it places the byte into \textit{rx\_buf} and empties the UART data register. Over time, the buffer fills up with sequences of bytes, and stops storing them when full. Since these interrupts are designed to be as light as possible, the actual emptying, and reading of the buffer has to be done somewhere else. In this case, the ComManagement task is responsible for that among other things, and does so in a periodic manner.
 \item[In the Choreographer,] similar behavior is implemented in appropriate libraries. At this point, the aspect which differs from the Cubli implementation is that these libraries are configured to immediately handle data after a burst of bytes is received - i.e. a call is made to the function \textit{readData()} after every group of bytes which are sent in quick succession. \textit{readData()} contains the next step in handling and decryption of the information.
-As such, Cubli performs the next step periodically, while the choreographer app does so in a responsive manner.
+As such, Cubli performs the next step periodically, while the choreographer application does so in a responsive manner.
 \end{description}
 
 \item Next, the data present in the low-level buffers described above are appended to a second, higher-level buffer, which is accessed less often. The contents of this second buffer are passed to the \textit{decrypt\_message()} function in com\_protocol.c. If a message is present in these contents, it is disassembled, and verified. If a message is not intended to have the current device as a recipient, it is discarded. If its length or hash is invalid, it is also discarded.
 
 \begin{description}
 \item[In Cubli,] this step is done inside the ComManagement task. Particularities are: the buffer is erased and overwritten on every loop of the task, instead of having the new data appended to it. This is due to the fact that testing of the append-data method yielded worst results, against expectations. \textit{ It is hypothesised that the period of the ComManagement task being larger than the time it takes for the choreographer to emit an entire sequence of bytes composing a message, and that length of time being extremely small, chances of messages being separated is very low. Low enough that the append-data method's advantage, that is, reconstitution of separated messages, is not significant enough to compensate the performance loss due to increase in task complexity.}
-\item[In the Choreographer,] data is appended on the high-level buffer, thus separated messages are reconstituted. This was shown to have a significant positive impact, as the likelihood of messages being separated upon reception by the choreographer app is higher - likely due to the event-based nature of the choreographer UART data handling.
-An interesting point is the fact that as soon as the first message present in the buffer is read ( more precisely, if \textit{decrypt\_message()} returns a non-zero value ), the entire buffer is cleared and any messages already present in the remaining bytes is thus thrown away. This was done to keep up with the high communication frequency that can arise - in the case where messages are emitted too fast, if the app were to treat every single one it would progressively lag behind ( this has been tested, and is effectively the case ). 
+\item[In the Choreographer,] data is appended on the high-level buffer, thus separated messages are reconstituted. This was shown to have a significant positive impact, as the likelihood of messages being separated upon reception by the choreographer application is higher - likely due to the event-based nature of the choreographer UART data handling.
+An interesting point is the fact that as soon as the first message present in the buffer is read ( more precisely, if \textit{decrypt\_message()} returns a non-zero value ), the entire buffer is cleared and any messages already present in the remaining bytes is thus thrown away. This was done to keep up with the high communication frequency that can arise - in the case where messages are emitted too fast, if the application were to treat every single one it would progressively lag behind ( this has been tested, and is effectively the case ). 
 \end{description}
 
 \item At this point, the devices can handle the decrypted message, thanks to their appropriate communication state machines. 
@@ -344,7 +344,7 @@ Otherwise, or in addition, devices having already exited the protocol can be pro
 
 \subsubsection{Connecting Protocol}
 
-The choreographer application needs to know which cubes are connected, and which aren't. This is in order to spare the user the necessity of manually adding and removing cubes, as well as the potential errors that come with it ( mislabeled cubes, non-existant cubes, ... ). Cublis, however, have no need to know whether they are connected or not - the app either sends them commands and information, or it does not.
+The choreographer application needs to know which cubes are connected, and which are not. This is in order to spare the user the necessity of manually adding and removing cubes, as well as the potential errors that come with it ( mislabeled cubes, non-existant cubes, ... ). Cublis, however, have no need to know whether they are connected or not - the application either sends them commands and information, or it does not.
 
 As a result, the connection protocol is not symmetrical. 
 
@@ -357,7 +357,7 @@ As a result, the connection protocol is not symmetrical.
 \item[] \textbf{Cubli to PC:} "received"
 \end{itemize}
 
-at which point, the application changes the appropriate cubes status to "Unsynced"\\
+at which point, the application changes the appropriate cubes' status to "Unsynced"\\
 
 \item[] \textbf{Alternate procedures:}
 
@@ -396,7 +396,7 @@ The application performs the same procedure for each connected Cubli, one after 
 \item[] \textbf{Cubli to PC:} "part 1 received"
 \item[] \textbf{PC to Cubli:} "part 2"
 \item[] \textbf{Cubli to PC:} "part 2 received"
-\item[] \textbf{idem. for parts 3 to N ...}
+\item[] \textbf{Idem. for parts 3 to N ...}
 \item[] \textbf{PC to Cubli:} "part N"
 \item[] \textbf{Cubli to PC:} "part N received"
 \item[] \textbf{PC to Cubli:} "finish transfer"
@@ -410,7 +410,7 @@ The first message is resent by the application until confirmation of reception.
 From that point on, every 50ms during which Cubli does not receive a part, it sends a "waiting" message. 
 Upon reception such one "waiting" message, otherwise periodically, the application re-sends the latest part or "finish transfer" message. It does so until a timeout is reached, at which point the application sends 10 "abort transfer" messages, and disconnects the cube if it has not mirrored any of the 10 "abort transfer" messages.
 
-The cube has no timeout, and should a cube for any reason remain stuck sending out "waiting" messages, the app is programmed to respond with "abort transfer" if is not, itself, in the sync state.
+The cube has no timeout, and should a cube for any reason remain stuck sending out "waiting" messages, the application is programmed to respond with "abort transfer" if it is not, itself, in the sync state.
 
 \end{itemize}
 
@@ -426,7 +426,7 @@ The cube has no timeout, and should a cube for any reason remain stuck sending o
 \item[] \textbf{Cublis to PC:} "got count"
 \item[] \textbf{PC to Cublis:} "start in:  8"
 \item[] \textbf{Cublis to PC:} "got count"
-\item[] \textbf{idem. from 7 to 2...}
+\item[] \textbf{Idem. from 7 to 2...}
 \item[] \textbf{PC to Cublis:} "start in:  1"
 \item[] \textbf{all devices start choreography}
 \end{itemize}
@@ -472,7 +472,7 @@ The PC repeats the message 10 times, or until it has received at least one confi
 \item[] \textbf{All Cublis   to PC :} "resume in"
 \item[] \textbf{PC           to All:} "resume in  8"
 \item[] \textbf{All Cublis   to PC :} "resume in"
-\item[] \textbf{idem. from 7 to 2...}
+\item[] \textbf{Idem. from 7 to 2...}
 \item[] \textbf{PC           to All:} "resume in  1"
 \item[] \textbf{All Cublis   to PC :} "resume in"
 \item[] \textbf{all devices resume choreography}
@@ -507,7 +507,7 @@ The choreography resume protocol is similar to the start protocol, in that the c
 
 \section{Cubli Development}
 
-In order to avoid introducing new bugs, care was taken to build on top of already-existing functionality rather than to modify it, as much as possible.
+In order to avoid introducing new bugs, care was taken to build on top of already-existing functionality rather than to modify it.
 
 This means that except for a few additional line of codes, the controllers remain unchanged, and the code relevant to this project is composed of additional tasks for communication, choreography, and additions in mode management.\\
 
@@ -537,7 +537,7 @@ In addition, the OS also deals with interrupt routines and more specific functio
 \item[] Following this, ModeManagement waits 5 seconds before updating the controller task management variables, in order to prevent immediate and ill-controlled behavior.
 \end{itemize}
 
-\item Still in \textbf{Controllers.c}, the task management variables, \texttt{\_jumpMode, \_balance, \_balancingMode} determine whether controller tasks execute actions or wait idly. These tasks access IMU and sensor measurements, calculate the necessary control actions, and set target actuation values appropriately. Actuation tasks then attempt to realize those values and interact with the servo hardware.
+\item Still in \textbf{Controllers.c}, the task management variables, \texttt{\_jumpMode, \_balance, \_balancingMode} determine whether controller tasks execute actions or wait idly. These tasks access IMU and sensor measurements, calculate the necessary control actions, and set target actuation values appropriately. Actuation tasks then attempt to realize those values and interact with the hardware.
 \end{itemize}
 
 \textit{See Figure \ref{img:Controllers}, left diagram, for a visual overview of this process.}
@@ -555,7 +555,7 @@ This subsection describes the code modifications and additions to the relevant t
 
 Originally a task responsible for updating the global variables responsible for deciding which controllers get activated based on the current mode ( which is originally incremented through the press of a respective hardware button ), this functionality is conserved and extended in this project.\\
 
-New modes are created for choreography, corresponding to the movement primitives, while the original modes are renamed to button modes. \textit{See Table \ref{tab:modenumbers} }. Relevant code sections are modified to make the new and original modes cohabitate. To this end, the original and old modes are distinguishable, allowing behavior which was only needed in old modes to be disabled for the new modes only.\\
+New modes are created for choreography, corresponding to the motion primitives, while the original modes are renamed to button modes. \textit{See Table \ref{tab:modenumbers} }. Relevant code sections are modified to make the new and original modes coexist. To this end, the original and old modes are distinguishable, allowing behavior which was only needed in old modes to be disabled for the new modes only.\\
 
 \begin{table}[H]
 \begin{center}
@@ -580,9 +580,9 @@ SingleSpin  & \\
 
 \subsubsection{ComManagement Task}
 
-Created during this project, the ComManagement task contains both the code responsible for reading from the UART buffer, and a communication state machine similar to the one in the choreography app.\\
+Created during this project, the ComManagement task contains both the code responsible for reading from the UART buffer, and a communication state machine similar to the one in the choreography application.\\
 
-One notable difference between the communication behavior of Cubli compared to the app is that its communication state machine is triggered regularly rather than on specific event occurences. This is discussed in further details inside this chapter's \textit{Communications} section, in the \textit{Information Reception \& Decryption} subsection.\\ 
+One notable difference between the communication behavior of Cubli compared to the application is that its communication state machine is triggered regularly rather than on specific event occurences. This is discussed in further details inside this chapter's \textit{Communications} section, in the \textit{Information Reception \& Decryption} subsection.\\ 
 
 As for the communication state machine, it implements the protocols which are described inside this chapter's \textit{Communications} section, in the \textit{Protocols} subsection. 
 
@@ -594,7 +594,7 @@ The choreography management task is only active during choreography, in which ca
 
 \subsubsection{Controller Tasks}
 
-Some controller tasks were modified, to the smallest necessary extent, to fit with the choreographer functionality. Care was taken to ensure that the controller behavior would remain unchanged outside of choreography (i.e. with the relevant code sections being bypassed by if-clauses checking for choreography activity)
+Some controller tasks were modified, to the smallest necessary extent, to fit with the choreographer functionality. Care was taken to ensure that the controller behavior would remain unchanged outside of choreography (i.e. with the relevant code sections being bypassed by if-clauses checking for choreography activity).
 
 Three functionalities had to be added in the controllers' code:
 \begin{itemize}
@@ -649,4 +649,4 @@ Due to the expected use-cases of the choreographer application, it was deemed th
 
 This results in a maximum timeline length of 12 minutes. 
 
-If need be, this limit can be increased, though the message contents during sync would have to be expanded.
+If needed, this limit can be increased, though the message contents during sync would have to be expanded.
