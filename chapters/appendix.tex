@@ -12,9 +12,9 @@ It is said that one learns more from what goes wrong than from what goes well. A
 \textbf{Symptoms:} same code compiled on both machines, but neither accepts each other's messages.\\
 Although both machines could be shown to transmit and receive the full messages correctly. Messages were not decrypted successfully. The error was raised that hashes were not in accordance, even though all the hash generation/checking code was compiled from the same source, the shared com\_protocol.c file, in both modules. This was due to an oversight in typecasting from signed values to unsigned value, resulting in potentially compiler-dependent behavior. \\
 For example: 1-byte signed char 11111000 to unsigned 2 byte int becomes either 11111111 11111000 or 00000000 11111000 depending on the compiler. One being significantly larger than the other.  \\
-\textbf{Note:} All data transmitted through the serial port is necessarily converted to chars ( 8 bit values ), with existing cubli code using specifically signed chars. On the other hand some mathematical and shift operations are fully defined only on unsigned variables. Be knowledgeable or test extensively when converting from one to the other.  
+\textbf{Note:} All data transmitted through the serial port is necessarily converted to chars ( 8 bit values ), with existing Cubli code using specifically signed chars. On the other hand some mathematical and shift operations are fully defined only on unsigned variables. Be knowledgeable or test extensively when converting from one to the other.  
  
-\section{Unstable behavior when cubli doesn't have a fall-to-face delay} 
+\section{Unstable behavior when Cubli doesn't have a fall-to-face delay} 
 
  \cleardoublepage
 
